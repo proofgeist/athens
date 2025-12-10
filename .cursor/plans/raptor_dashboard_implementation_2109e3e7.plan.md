@@ -372,31 +372,49 @@ const { data: session, isPending } = authClient.useSession();
 - Simple card with logout button
 - Redirect to login after signout
 
-### Auth Middleware
+### Auth Proxy (Next.js 16)
 
-Create middleware to protect dashboard routes:
+In Next.js 16, middleware is renamed to **proxy**. Create a proxy to protect dashboard routes:
 
-**`apps/web/src/middleware.ts`**
+**`apps/web/src/proxy.ts`**
 
 ```typescript
 import { auth } from "@athens/auth";
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export default async function middleware(request: Request) {
+const protectedRoutes = ["/dashboard"];
+const authRoutes = ["/login"];
+
+export default async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  const isProtectedRoute = protectedRoutes.some((r) => pathname.startsWith(r));
+  const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
+
+  if (!isProtectedRoute && !isAuthRoute) {
+    return NextResponse.next();
+  }
+
+  // Use request.headers directly (Edge Runtime compatible)
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: request.headers,
   });
 
-  if (!session) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (isProtectedRoute && !session?.user) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && session?.user) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/(dashboard)(.*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json).*)"],
 };
 ```
 
