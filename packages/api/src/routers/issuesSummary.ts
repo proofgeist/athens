@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { protectedProcedure } from "../index";
 import { IssuesSummaryLayout } from "@athens/fm-client";
 
 // Input schemas
@@ -11,10 +11,10 @@ const getSystemProgressInput = z.object({
   project_asset_id: z.string(),
 });
 
-// IssuesSummary router
+// IssuesSummary router (protected - requires authentication)
 export const issuesSummaryRouter = {
   // Get latest summary for a project asset
-  getByProjectAsset: publicProcedure
+  getByProjectAsset: protectedProcedure
     .input(getByProjectAssetInput)
     .handler(async ({ input }) => {
       try {
@@ -39,7 +39,7 @@ export const issuesSummaryRouter = {
     }),
 
   // Get progress per system group
-  getSystemProgress: publicProcedure
+  getSystemProgress: protectedProcedure
     .input(getSystemProgressInput)
     .handler(async ({ input }) => {
       try {
@@ -83,7 +83,7 @@ export const issuesSummaryRouter = {
     }),
 
   // Get aggregated action item counts
-  getActionItemCounts: publicProcedure
+  getActionItemCounts: protectedProcedure
     .input(getByProjectAssetInput)
     .handler(async ({ input }) => {
       try {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { protectedProcedure } from "../index";
 import { ProjectsLayout } from "@athens/fm-client";
 
 // Input schemas
@@ -16,9 +16,9 @@ const getProjectByIdInput = z.object({
   id: z.string(),
 });
 
-// Projects router
+// Projects router (protected - requires authentication)
 export const projectsRouter = {
-  list: publicProcedure
+  list: protectedProcedure
     .input(listProjectsInput)
     .handler(async ({ input }) => {
       const { region, phase, risk_level, status, limit, offset } = input;
@@ -55,7 +55,7 @@ export const projectsRouter = {
       }
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getProjectByIdInput)
     .handler(async ({ input }) => {
       const result = await ProjectsLayout.find({

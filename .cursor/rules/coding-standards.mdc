@@ -1,0 +1,247 @@
+---
+description: |
+  General coding standards and best practices for maintaining code quality.
+  Applies to all TypeScript/JavaScript files in the monorepo.
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+alwaysApply: true
+---
+
+# Coding Standards
+
+General coding standards and best practices for this project.
+
+<rule>
+name: coding_standards
+description: Ensures consistent, maintainable, and high-quality code
+
+project_structure:
+  monorepo_conventions:
+    packages:
+      types: "Shared types, schemas, and utilities used across apps"
+      typescript_config: "Shared TypeScript configurations"
+    apps:
+      webviewer: "FileMaker WebViewer application"
+    rules:
+      - "Shared code goes in packages/"
+      - "App-specific code stays in apps/"
+      - "Import shared code via package names, not relative paths"
+
+  import_ordering:
+    order:
+      1: "Node built-ins (with node: prefix)"
+      2: "External dependencies"
+      3: "Internal packages (@notre/types)"
+      4: "Relative imports (./)"
+    pattern: |
+      // ✅ Good: Organized imports
+      import { existsSync } from 'node:fs';
+
+      import { z } from 'zod/v4';
+      import { DataApi } from '@proofkit/fmdapi';
+
+      import { Zparticipants, type Tparticipants } from '@notre/types';
+
+      import { localHelper } from './utils';
+
+naming_conventions:
+  files:
+    - "Use kebab-case for file names: `user-profile.ts`"
+    - "Use PascalCase for React components: `UserProfile.tsx`"
+    - "Prefix generated files: `generated/*.ts`"
+    - "Prefix client configs: `client/*.ts`"
+
+  variables:
+    - "Use camelCase for variables and functions"
+    - "Use PascalCase for types, interfaces, classes, and components"
+    - "Use SCREAMING_SNAKE_CASE for constants"
+    - "Prefix Zod schemas with 'Z': `Zparticipants`"
+    - "Prefix TypeScript types with 'T': `Tparticipants`"
+
+  functions:
+    - "Use verbs for function names: `getUser`, `createRecord`, `validateInput`"
+    - "Use 'is/has/can' prefix for boolean functions: `isValid`, `hasPermission`"
+    - "Use 'handle' prefix for event handlers: `handleClick`, `handleSubmit`"
+
+error_handling:
+  principles:
+    - "Fail fast and fail loudly in development"
+    - "Provide meaningful error messages"
+    - "Never swallow errors silently"
+    - "Use Result types for recoverable errors"
+
+  patterns:
+    boundary_validation: |
+      // ✅ Good: Validate at boundaries, trust internally
+      async function handleRequest(rawData: unknown) {
+        const result = InputSchema.safeParse(rawData);
+        if (!result.success) {
+          throw new ValidationError(result.error);
+        }
+        // After this point, data is fully typed
+        return processData(result.data);
+      }
+
+    error_wrapping: |
+      // ✅ Good: Wrap external errors with context
+      try {
+        return await externalApi.fetch();
+      } catch (error) {
+        throw new ApiError('Failed to fetch data', { cause: error });
+      }
+
+async_patterns:
+  rules:
+    - "Always handle Promise rejections"
+    - "Use async/await over .then() chains"
+    - "Don't await inside loops - use Promise.all"
+    - "Use try/catch for async error handling"
+
+  patterns:
+    parallel_async: |
+      // ✅ Good: Parallel execution
+      const [users, posts] = await Promise.all([
+        fetchUsers(),
+        fetchPosts(),
+      ]);
+
+    sequential_async: |
+      // ✅ Good: Sequential when dependent
+      const user = await fetchUser(id);
+      const posts = await fetchPostsByUser(user.id);
+
+function_design:
+  principles:
+    - "Single responsibility - one function, one job"
+    - "Pure functions when possible - same input, same output"
+    - "Small functions - if it's over 30 lines, consider splitting"
+    - "Explicit parameters over implicit globals"
+
+  patterns:
+    pure_function: |
+      // ✅ Good: Pure function
+      function calculateTotal(items: Item[]): number {
+        return items.reduce((sum, item) => sum + item.price, 0);
+      }
+
+    dependency_injection: |
+      // ✅ Good: Dependencies as parameters
+      function createUserService(db: Database, logger: Logger) {
+        return {
+          async getUser(id: string) {
+            logger.info(`Fetching user ${id}`);
+            return db.users.findUnique({ where: { id } });
+          },
+        };
+      }
+
+component_patterns:
+  rules:
+    - "Keep components small and focused"
+    - "Extract logic into custom hooks"
+    - "Prefer composition over prop drilling"
+    - "Use TypeScript for prop definitions"
+
+  patterns:
+    typed_props: |
+      // ✅ Good: Props derived from schema
+      type UserCardProps = {
+        user: Pick<Tparticipants, 'id' | 'created_at'>;
+        onSelect?: (id: string) => void;
+      };
+
+      function UserCard({ user, onSelect }: UserCardProps) {
+        return (
+          <div onClick={() => onSelect?.(user.id)}>
+            {user.id}
+          </div>
+        );
+      }
+
+    custom_hooks: |
+      // ✅ Good: Extract logic to hooks
+      function useParticipant(id: string) {
+        const [data, setData] = useState<Tparticipants | null>(null);
+        const [error, setError] = useState<Error | null>(null);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+          fetchParticipant(id)
+            .then(setData)
+            .catch(setError)
+            .finally(() => setLoading(false));
+        }, [id]);
+
+        return { data, error, loading };
+      }
+
+commenting:
+  rules:
+    - "Code should be self-documenting - use clear names"
+    - "Comment WHY, not WHAT"
+    - "Use JSDoc for public APIs and exported functions"
+    - "Remove commented-out code - use version control"
+
+  patterns:
+    jsdoc: |
+      /**
+       * Fetches a participant by ID from the FileMaker database.
+       * @param id - The unique identifier of the participant
+       * @returns The participant record or null if not found
+       * @throws {ValidationError} If the ID format is invalid
+       */
+      async function getParticipant(id: string): Promise<Tparticipants | null> {
+        // ...
+      }
+
+    why_comment: |
+      // FileMaker returns dates as strings in ISO format,
+      // but the timezone is always UTC regardless of server settings
+      const date = new Date(record.created_at + 'Z');
+
+testing:
+  principles:
+    - "Test behavior, not implementation"
+    - "Use meaningful test descriptions"
+    - "One assertion per test when possible"
+    - "Test edge cases and error conditions"
+
+  naming: |
+    // ✅ Good: Descriptive test names
+    describe('UserService', () => {
+      it('returns null when user does not exist', async () => {
+        const result = await userService.getUser('nonexistent');
+        expect(result).toBeNull();
+      });
+
+      it('throws ValidationError when id is empty', async () => {
+        await expect(userService.getUser('')).rejects.toThrow(ValidationError);
+      });
+    });
+
+forbidden_patterns:
+  - pattern: "console.log in production code"
+    use_instead: "Structured logging or remove before commit"
+
+  - pattern: "Magic numbers and strings"
+    use_instead: "Named constants"
+
+  - pattern: "Nested ternaries"
+    use_instead: "Early returns or switch statements"
+
+  - pattern: "Mutating function parameters"
+    use_instead: "Return new values"
+
+  - pattern: "Default exports"
+    use_instead: "Named exports for better refactoring"
+
+  - pattern: "Barrel files that re-export everything"
+    use_instead: "Direct imports or selective re-exports"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

@@ -20,6 +20,15 @@ todos:
   - id: api-documentation
     content: Document oRPC routes in README
     status: completed
+  - id: auth-pages
+    content: Build login and signup pages with Better Auth
+    status: completed
+  - id: auth-middleware
+    content: Add auth middleware for protected routes
+    status: completed
+  - id: auth-orpc
+    content: Convert RAPTOR oRPC procedures to protectedProcedure
+    status: completed
   - id: dashboard-layout
     content: Build collapsible sidebar layout and top navigation
     status: pending
@@ -284,7 +293,235 @@ pnpm --filter @athens/api test
 
 ---
 
-## 6. App Routes
+## 6. Authentication (Better Auth)
+
+Authentication is handled by [Better Auth](https://www.better-auth.com/) with FileMaker as the database backend via `@proofkit/better-auth`.
+
+### Architecture
+
+```
+packages/auth/src/index.ts    → Server-side auth config (FileMakerAdapter)
+apps/web/src/lib/auth-client.ts → Client-side auth hooks
+apps/web/src/app/api/auth/[...all]/route.ts → Auth API routes
+```
+
+### Server Config (`@athens/auth`)
+
+```typescript
+import { betterAuth } from "better-auth";
+import { FileMakerAdapter } from "@proofkit/better-auth";
+import { nextCookies } from "better-auth/next-js";
+
+export const auth = betterAuth({
+  database: FileMakerAdapter({
+    odata: {
+      serverUrl: process.env.FM_SERVER,
+      auth: { apiKey: process.env.OTTO_API_KEY },
+      database: process.env.FM_DATABASE,
+    },
+  }),
+  plugins: [nextCookies()],
+});
+```
+
+### Client Usage (`authClient`)
+
+```typescript
+import { authClient } from "@/lib/auth-client";
+
+// Sign up
+await authClient.signUp.email({
+  email: "user@example.com",
+  password: "securepassword",
+  name: "User Name",
+});
+
+// Sign in
+await authClient.signIn.email({
+  email: "user@example.com",
+  password: "password",
+});
+
+// Sign out
+await authClient.signOut();
+
+// Get session (React hook)
+const { data: session, isPending } = authClient.useSession();
+```
+
+### Auth Pages to Build
+
+**`(auth)/login/page.tsx`** - Login page
+
+- Email/password form using shadcn `Input`, `Button`, `Card`
+- "Remember me" checkbox
+- Link to signup
+- Error handling with toast notifications
+- Redirect to dashboard on success
+
+**`(auth)/signup/page.tsx`** - Signup page
+
+- Email, password, confirm password, name fields
+- Form validation with Zod + TanStack Form
+- Password strength indicator
+- Link to login
+- Redirect to dashboard on success
+
+**`(auth)/logout/page.tsx`** (optional) - Logout confirmation
+
+- Simple card with logout button
+- Redirect to login after signout
+
+### Auth Middleware
+
+Create middleware to protect dashboard routes:
+
+**`apps/web/src/middleware.ts`**
+
+```typescript
+import { auth } from "@athens/auth";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+export default async function middleware(request: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/(dashboard)(.*)"],
+};
+```
+
+### Session in Server Components
+
+```typescript
+import { auth } from "@athens/auth";
+import { headers } from "next/headers";
+
+export default async function DashboardPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  return <div>Welcome, {session?.user.name}</div>;
+}
+```
+
+### Protected oRPC Procedures
+
+Use `protectedProcedure` for authenticated-only routes:
+
+```typescript
+import { protectedProcedure } from "../index";
+
+export const privateRouter = {
+  getMyData: protectedProcedure.handler(({ context }) => {
+    // context.session.user available
+    return { userId: context.session.user.id };
+  }),
+};
+```
+
+### Auth-Protected RAPTOR Procedures
+
+Update existing routers to require authentication. Most RAPTOR data should be protected:
+
+**`routers/projects.ts`** - Convert to protected procedures
+
+```typescript
+import { protectedProcedure } from "../index";
+import { z } from "zod";
+
+export const projectsRouter = {
+  list: protectedProcedure
+    .input(z.object({ /* filters */ }).optional())
+    .handler(async ({ input, context }) => {
+      // context.session.user available for audit logging
+      const userId = context.session.user.id;
+      // ... existing logic
+    }),
+    
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .handler(async ({ input, context }) => {
+      // ... existing logic
+    }),
+};
+```
+
+**All RAPTOR routers to protect:**
+
+| Router | Procedures | Auth Required |
+
+|--------|------------|---------------|
+
+| `projects` | `list`, `getById` | ✅ Protected |
+
+| `assets` | `list`, `getById` | ✅ Protected |
+
+| `projectAssets` | `list`, `getById`, `getSummaryStats` | ✅ Protected |
+
+| `smartList` | `list`, `getById`, `getStatusSummary` | ✅ Protected |
+
+| `issuesSummary` | `getByProjectAsset`, `getSystemProgress`, `getActionItemCounts` | ✅ Protected |
+
+### User-Scoped Queries (Future)
+
+For multi-tenant or role-based access, use session data to filter results:
+
+```typescript
+export const projectsRouter = {
+  list: protectedProcedure.handler(async ({ context }) => {
+    const { user } = context.session;
+    
+    // Filter by user's organization/permissions
+    const filter = user.role === "admin" 
+      ? undefined 
+      : `assigned_to eq '${user.email}'`;
+    
+    return await ProjectsClient.client.find({ query: { filter } });
+  }),
+};
+```
+
+### Auth Router
+
+Add user profile and session management procedures:
+
+**`routers/auth.ts`**
+
+```typescript
+import { protectedProcedure, publicProcedure } from "../index";
+import { z } from "zod";
+
+export const authRouter = {
+  // Get current user profile
+  me: protectedProcedure.handler(({ context }) => {
+    return {
+      id: context.session.user.id,
+      email: context.session.user.email,
+      name: context.session.user.name,
+    };
+  }),
+
+  // Check if user is authenticated (public - returns null if not)
+  session: publicProcedure.handler(({ context }) => {
+    return context.session ?? null;
+  }),
+};
+```
+
+---
+
+## 7. App Routes (Updated)
 
 ### Route Structure
 
@@ -305,7 +542,7 @@ apps/web/src/app/
 
 ---
 
-## 7. UI Components
+## 8. UI Components
 
 ### Layout Components
 
@@ -349,7 +586,7 @@ apps/web/src/app/
 
 ---
 
-## 8. Implementation Phases
+## 9. Implementation Phases
 
 ### Phase 1A: Foundation (FileMaker + Types) ✅ COMPLETED
 
@@ -366,7 +603,16 @@ apps/web/src/app/
 4. ✅ Write integration tests (16 tests passing)
 5. ✅ Verify end-to-end: Frontend → oRPC → Data API → FileMaker
 
-### Phase 1C: Dashboard UI (NEXT)
+### Phase 1C: Authentication (NEXT)
+
+1. Build login page with email/password form
+2. Build signup page with validation
+3. Add auth middleware for protected routes
+4. Convert RAPTOR oRPC procedures to `protectedProcedure`
+5. Add auth router (`me`, `session` procedures)
+6. Test auth flow end-to-end
+
+### Phase 1D: Dashboard UI
 
 1. Build collapsible sidebar layout
 2. Create dashboard page with stats cards
@@ -374,14 +620,14 @@ apps/web/src/app/
 4. Add filtering and sorting
 5. Connect to oRPC procedures
 
-### Phase 1D: Project Details
+### Phase 1E: Project Details
 
 1. Build detail page layout
 2. Create completion gauge components
 3. Build chart components (bar charts, progress bars)
 4. Implement SmartList table with filtering
 
-### Phase 1E: Polish
+### Phase 1F: Polish
 
 1. Enhance auth pages with modern card styling
 2. Add loading states and skeletons

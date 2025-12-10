@@ -1,8 +1,4 @@
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load environment variables from root .env
-config({ path: resolve(__dirname, '../../../../.env') });
+import 'dotenv/config';
 
 // Verify required env vars are present
 const requiredEnvVars = ['FM_SERVER', 'FM_DATABASE', 'OTTO_API_KEY'];

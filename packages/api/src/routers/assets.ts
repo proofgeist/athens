@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { protectedProcedure } from "../index";
 import { AssetsLayout } from "@athens/fm-client";
 
 // Input schemas
@@ -14,9 +14,9 @@ const getAssetByIdInput = z.object({
   id: z.string(),
 });
 
-// Assets router
+// Assets router (protected - requires authentication)
 export const assetsRouter = {
-  list: publicProcedure
+  list: protectedProcedure
     .input(listAssetsInput)
     .handler(async ({ input }) => {
       const { type, location, limit, offset } = input;
@@ -48,7 +48,7 @@ export const assetsRouter = {
       }
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getAssetByIdInput)
     .handler(async ({ input }) => {
       const result = await AssetsLayout.find({

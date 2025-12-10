@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { protectedProcedure } from "../index";
 import { ProjectAssetsLayout } from "@athens/fm-client";
 
 // Input schemas
@@ -14,9 +14,9 @@ const getProjectAssetByIdInput = z.object({
   id: z.string(),
 });
 
-// ProjectAssets router
+// ProjectAssets router (protected - requires authentication)
 export const projectAssetsRouter = {
-  list: publicProcedure
+  list: protectedProcedure
     .input(listProjectAssetsInput)
     .handler(async ({ input }) => {
       const { project_id, asset_id, limit, offset } = input;
@@ -48,7 +48,7 @@ export const projectAssetsRouter = {
       }
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getProjectAssetByIdInput)
     .handler(async ({ input }) => {
       const result = await ProjectAssetsLayout.find({
@@ -64,7 +64,7 @@ export const projectAssetsRouter = {
     }),
 
   // Get summary stats for dashboard
-  getSummaryStats: publicProcedure.handler(async () => {
+  getSummaryStats: protectedProcedure.handler(async () => {
     try {
       const result = await ProjectAssetsLayout.find({
         query: [{ id: "*" }], // Get all

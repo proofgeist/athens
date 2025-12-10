@@ -1,0 +1,405 @@
+---
+description: |
+  Testing standards for unit tests and integration tests.
+  Ensures comprehensive test coverage with proper isolation and real database verification.
+globs:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/integration-tests.ts"
+  - "**/__tests__/**"
+alwaysApply: true
+---
+
+# Testing Patterns
+
+Standards for writing unit tests (with mocks) and integration tests (against the database).
+
+<rule>
+name: testing_patterns
+description: Ensures comprehensive testing with both unit tests and integration tests
+
+core_principles:
+  test_pyramid:
+    description: "Balance unit tests and integration tests appropriately"
+    rules:
+      - "Unit tests: Fast, isolated, verify logic in isolation with mocks"
+      - "Integration tests: Slower, verify real database operations work correctly"
+      - "Write both types of tests for critical functionality"
+      - "Unit tests catch logic errors quickly, integration tests catch data/API issues"
+
+  when_to_write_each:
+    unit_tests:
+      - "Business logic and utility functions"
+      - "React hooks (with mocked dependencies)"
+      - "Component rendering and interactions"
+      - "Data transformations and validations"
+      - "Error handling paths"
+    integration_tests:
+      - "Data API operations (CRUD)"
+      - "Authentication flows"
+      - "Multi-step workflows that touch the database"
+      - "Data integrity and relationship validation"
+      - "FileMaker script execution"
+
+testing_framework:
+  tools:
+    - "vitest: Test runner with Jest-compatible API"
+    - "@testing-library/react: React component and hook testing"
+    - "@testing-library/jest-dom: DOM matchers"
+  
+  configuration:
+    location: "apps/webviewer/vitest.config.ts"
+    setup: "apps/webviewer/src/__tests__/setup.ts"
+
+unit_test_patterns:
+  file_naming:
+    description: "Co-locate unit tests with source files"
+    rules:
+      - "Name test files: `{filename}.test.ts` or `{filename}.test.tsx`"
+      - "Place next to the file being tested"
+      - "Example: `useAuth.ts` → `useAuth.test.tsx`"
+  
+  structure:
+    description: "Organize tests with describe/it blocks"
+    example: |
+      import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+      describe('FunctionOrComponent', () => {
+        beforeEach(() => {
+          vi.clearAllMocks();
+        });
+
+        describe('specificBehavior', () => {
+          it('should do X when Y', async () => {
+            // Arrange
+            const input = { ... };
+            
+            // Act
+            const result = await functionUnderTest(input);
+            
+            // Assert
+            expect(result).toEqual(expectedOutput);
+          });
+
+          it('should throw error when invalid input', async () => {
+            await expect(functionUnderTest(invalidInput))
+              .rejects.toThrow('Expected error message');
+          });
+        });
+      });
+
+  mocking:
+    description: "Mock external dependencies, not the code under test"
+    patterns:
+      mock_module: |
+        // Mock an entire module
+        vi.mock('@/lib/auth', () => ({
+          signIn: vi.fn(),
+          signOut: vi.fn(),
+        }));
+
+        // Use the mock in tests
+        vi.mocked(authLib.signIn).mockResolvedValue(mockResult);
+
+      mock_filemaker: |
+        // Mock FileMaker Data API calls
+        vi.mock('@notre/types', () => ({
+          participantsLayout: {
+            find: vi.fn(),
+            create: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+          },
+        }));
+
+      spy_on_method: |
+        // Spy on specific methods
+        const spy = vi.spyOn(service, 'method');
+        spy.mockImplementation(() => mockValue);
+
+  react_hooks:
+    description: "Test hooks with renderHook and proper wrappers"
+    example: |
+      import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+      import { renderHook, act, waitFor } from '@testing-library/react';
+
+      function createWrapper() {
+        const queryClient = new QueryClient({
+          defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+          },
+        });
+        return ({ children }: { children: ReactNode }) => (
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        );
+      }
+
+      it('should handle mutation', async () => {
+        const { result } = renderHook(() => useMyHook(), {
+          wrapper: createWrapper(),
+        });
+
+        await act(async () => {
+          await result.current.mutation.mutateAsync(data);
+        });
+
+        expect(result.current.mutation.isSuccess).toBe(true);
+      });
+
+  assertions:
+    rules:
+      - "Use specific matchers: toEqual, toContain, toHaveBeenCalledWith"
+      - "Test error cases with rejects.toThrow"
+      - "Verify mock calls with toHaveBeenCalledWith"
+      - "Use waitFor for async state changes"
+    examples: |
+      // Value assertions
+      expect(result).toEqual({ id: '1', name: 'Test' });
+      expect(array).toContain('item');
+      expect(value).toBeTruthy();
+
+      // Function call assertions
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
+
+      // Async assertions
+      await expect(asyncFn()).resolves.toEqual(expected);
+      await expect(asyncFn()).rejects.toThrow('error');
+
+      // DOM assertions (with @testing-library/jest-dom)
+      expect(element).toBeInTheDocument();
+      expect(element).toHaveTextContent('text');
+
+integration_test_patterns:
+  file_location:
+    description: "Separate integration tests from unit tests"
+    rules:
+      - "Place in dedicated files: `integration-tests.ts`"
+      - "Or use `{feature}.integration.test.ts` naming"
+      - "Integration tests run against the real FileMaker database"
+
+  structure:
+    description: "Self-contained test runner with cleanup"
+    example: |
+      import { participantsLayout } from '@notre/types';
+
+      type TestResult = {
+        name: string;
+        passed: boolean;
+        error?: string;
+        duration: number;
+      };
+
+      // Track created records for cleanup
+      const createdRecordIds: string[] = [];
+
+      async function runTest(
+        name: string, 
+        fn: () => Promise<void>
+      ): Promise<TestResult> {
+        const start = performance.now();
+        try {
+          await fn();
+          return { name, passed: true, duration: performance.now() - start };
+        } catch (error) {
+          return {
+            name,
+            passed: false,
+            error: error instanceof Error ? error.message : String(error),
+            duration: performance.now() - start,
+          };
+        }
+      }
+
+      // Cleanup function - always called after tests
+      async function cleanup() {
+        for (const recordId of createdRecordIds) {
+          try {
+            await participantsLayout.delete({ recordId });
+          } catch {
+            // Log but don't fail on cleanup errors
+          }
+        }
+        createdRecordIds.length = 0;
+      }
+
+  test_cases:
+    description: "Test real database operations"
+    examples:
+      create_and_read: |
+        const tests = [
+          {
+            name: 'Create record',
+            fn: async () => {
+              const result = await participantsLayout.create({
+                fieldData: {
+                  email: `test-${Date.now()}@test.local`,
+                  name: 'Integration Test',
+                },
+              });
+              
+              if (!result.recordId) {
+                throw new Error('No recordId returned');
+              }
+              
+              // Track for cleanup
+              createdRecordIds.push(result.recordId);
+            },
+          },
+          {
+            name: 'Read created record',
+            fn: async () => {
+              const recordId = createdRecordIds[0];
+              if (!recordId) {
+                throw new Error('No record to read');
+              }
+              
+              const record = await participantsLayout.get({ recordId });
+              if (!record) {
+                throw new Error('Record not found');
+              }
+            },
+          },
+        ];
+
+      find_operations: |
+        {
+          name: 'Find by criteria',
+          fn: async () => {
+            const results = await participantsLayout.find({
+              query: [{ email: '*@test.local' }],
+              limit: 10,
+            });
+            
+            if (!Array.isArray(results)) {
+              throw new Error('Expected array of results');
+            }
+          },
+        }
+
+      error_handling: |
+        {
+          name: 'Duplicate email fails',
+          fn: async () => {
+            const email = `test-dup-${Date.now()}@test.local`;
+            
+            // First create succeeds
+            const result = await participantsLayout.create({
+              fieldData: { email, name: 'Test 1' },
+            });
+            createdRecordIds.push(result.recordId);
+            
+            // Second create with same email should fail
+            try {
+              await participantsLayout.create({
+                fieldData: { email, name: 'Test 2' },
+              });
+              throw new Error('Should have thrown duplicate error');
+            } catch (error) {
+              if (!error.message.includes('already exists')) {
+                throw error; // Re-throw if not the expected error
+              }
+              // Expected error - test passes
+            }
+          },
+        }
+
+  running_integration_tests:
+    description: "Integration tests run in the WebViewer context"
+    rules:
+      - "Call from a UI component/page for manual testing"
+      - "Results display in the browser, not terminal"
+      - "Always include cleanup to remove test data"
+    example_page: |
+      // apps/webviewer/src/app/(protected)/tests/page.tsx
+      'use client';
+
+      import { useState } from 'react';
+      import { runAllIntegrationTests } from '@/lib/auth/integration-tests';
+
+      export default function TestsPage() {
+        const [results, setResults] = useState(null);
+        const [running, setRunning] = useState(false);
+
+        async function handleRunTests() {
+          setRunning(true);
+          try {
+            const result = await runAllIntegrationTests();
+            setResults(result);
+          } finally {
+            setRunning(false);
+          }
+        }
+
+        return (
+          <div>
+            <h1>Integration Tests</h1>
+            <button onClick={handleRunTests} disabled={running}>
+              {running ? 'Running...' : 'Run Tests'}
+            </button>
+            {results && <TestResults data={results} />}
+          </div>
+        );
+      }
+
+best_practices:
+  unit_tests:
+    - "Test one thing per test case"
+    - "Use descriptive test names: 'should X when Y'"
+    - "Arrange-Act-Assert pattern"
+    - "Mock at boundaries, not everywhere"
+    - "Test error paths, not just happy paths"
+    - "Clear mocks between tests with beforeEach"
+
+  integration_tests:
+    - "Always clean up created data"
+    - "Use unique identifiers (timestamps) to avoid conflicts"
+    - "Test realistic scenarios and workflows"
+    - "Capture detailed error information for debugging"
+    - "Run sequentially to avoid race conditions"
+    - "Test against actual FileMaker layouts and scripts"
+
+  coverage:
+    - "Critical auth flows: unit AND integration tests"
+    - "Data validation: unit tests"
+    - "CRUD operations: integration tests"
+    - "UI interactions: unit tests with mocked data"
+
+commands:
+  run_unit_tests: "pnpm test"
+  run_with_coverage: "pnpm test --coverage"
+  run_specific_file: "pnpm test src/hooks/useAuth.test.tsx"
+  watch_mode: "pnpm test --watch"
+
+forbidden_patterns:
+  - pattern: "Testing implementation details"
+    reason: "Tests should verify behavior, not internal structure"
+    use_instead: "Test public API and observable behavior"
+
+  - pattern: "Shared mutable state between tests"
+    reason: "Tests become order-dependent and flaky"
+    use_instead: "Reset state in beforeEach, cleanup in afterEach"
+
+  - pattern: "Hardcoded IDs in integration tests"
+    reason: "Tests fail when IDs don't exist"
+    use_instead: "Create test data, track IDs, clean up after"
+
+  - pattern: "Skipping error case testing"
+    reason: "Error paths are often where bugs hide"
+    use_instead: "Test invalid inputs, network failures, edge cases"
+
+  - pattern: "Not awaiting async operations"
+    reason: "Tests pass incorrectly due to race conditions"
+    use_instead: "Always await async calls, use waitFor for state changes"
+
+  - pattern: "Testing against production data"
+    reason: "Risk of data corruption, flaky tests"
+    use_instead: "Create isolated test data with unique identifiers"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

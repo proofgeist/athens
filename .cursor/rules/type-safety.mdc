@@ -1,0 +1,272 @@
+---
+description: |
+  Type safety rules and best practices for maintaining type integrity across the codebase.
+  These rules ensure consistent, safe, and maintainable TypeScript code.
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: true
+---
+
+# Type Safety Rules
+
+This rule documents the type safety conventions and best practices for this project.
+
+<rule>
+name: type_safety
+description: Ensures type safety, consistency, and maintainability across the codebase
+
+core_principles:
+  schema_first:
+    description: "The FileMaker schema is the single source of truth for data types"
+    rules:
+      - "NEVER create types that duplicate or diverge from the generated schema"
+      - "ALWAYS run `pnpm typegen` after FileMaker schema changes"
+      - "If a field is missing or wrong, modify the FileMaker database first, then regenerate types"
+      - "Alert the user when schema changes require `pnpm typegen` to be run"
+    workflow:
+      1: "Identify required data structure"
+      2: "Check if it exists in packages/types/src/schemas/filemaker/"
+      3: "If not, propose FileMaker schema changes via MCP tools, confirm with user"
+      4: "Run `pnpm typegen` to regenerate types"
+      5: "Import and use the generated types"
+
+  zod_first:
+    description: "Use Zod schemas as the primary type definition mechanism"
+    rules:
+      - "Define schemas with Zod, derive TypeScript types with z.infer<>"
+      - "Use Zod for runtime validation at system boundaries (API responses, form inputs, external data)"
+      - "Prefer Zod's built-in transformations over manual type conversions"
+      - "Use Zod's refinements for business logic validation"
+    patterns:
+      correct: |
+        // ✅ Good: Schema-first, type derived
+        const UserSchema = z.object({
+          id: z.string().uuid(),
+          email: z.string().email(),
+          createdAt: z.coerce.date(),
+        });
+        type User = z.infer<typeof UserSchema>;
+      incorrect: |
+        // ❌ Bad: Type-first, no runtime validation
+        interface User {
+          id: string;
+          email: string;
+          createdAt: Date;
+        }
+
+  single_source_of_truth:
+    description: "Each type should be defined once and imported everywhere"
+    rules:
+      - "Define types in packages/types/ for shared types across apps"
+      - "Define app-specific types in the app's own type files"
+      - "NEVER duplicate type definitions across files"
+      - "ALWAYS import existing types instead of creating new ones"
+      - "Use re-exports to create clean public APIs"
+    file_organization:
+      generated: "src/schemas/filemaker/generated/*.ts - DO NOT EDIT"
+      overrides: "src/schemas/filemaker/*.ts - Custom transformations"
+      client: "src/schemas/filemaker/client/*.ts - API client configurations"
+      shared: "packages/types/src/index.ts - Public exports"
+
+  no_unnecessary_assertions:
+    description: "Type assertions mask bugs - fix the underlying type issue instead"
+    rules:
+      - "NEVER use `as` to silence type errors without understanding the root cause"
+      - "NEVER use `!` non-null assertion unless you can prove the value is defined"
+      - "NEVER use `// @ts-ignore` or `// @ts-expect-error` without a comment explaining why"
+      - "If a type assertion seems necessary, investigate why the type is wrong"
+    alternatives:
+      instead_of_as:
+        - "Use type guards: if (isUser(data)) { ... }"
+        - "Use Zod parsing: const user = UserSchema.parse(data)"
+        - "Use discriminated unions"
+        - "Fix the upstream type definition"
+      instead_of_non_null:
+        - "Use optional chaining: data?.field"
+        - "Use nullish coalescing: data ?? defaultValue"
+        - "Add proper null checks in control flow"
+        - "Use Zod's .default() for schema defaults"
+    patterns:
+      incorrect: |
+        // ❌ Bad: Assertion to silence error
+        const user = data as User;
+        const name = user.name!;
+      correct: |
+        // ✅ Good: Proper validation
+        const result = UserSchema.safeParse(data);
+        if (result.success) {
+          const user = result.data;
+          const name = user.name; // type-safe access
+        }
+
+  use_generics:
+    description: "Use generics for reusable, type-safe abstractions"
+    rules:
+      - "Use generics when a function/type works with multiple types"
+      - "Constrain generics with extends when you need specific properties"
+      - "Use default type parameters for common cases"
+      - "Prefer generic constraints over type assertions inside functions"
+    patterns:
+      basic_generic: |
+        // ✅ Good: Generic function
+        function getFirst<T>(arr: T[]): T | undefined {
+          return arr[0];
+        }
+      constrained_generic: |
+        // ✅ Good: Constrained generic
+        function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+          return obj[key];
+        }
+      with_zod: |
+        // ✅ Good: Generic with Zod schema
+        function fetchAndParse<T extends z.ZodTypeAny>(
+          url: string,
+          schema: T
+        ): Promise<z.infer<T>> {
+          return fetch(url).then(r => r.json()).then(schema.parse);
+        }
+
+  extend_and_pick:
+    description: "Compose types using Zod's schema composition methods"
+    rules:
+      - "Use .extend() to add fields to existing schemas"
+      - "Use .pick() to select specific fields from schemas"
+      - "Use .omit() to exclude specific fields"
+      - "Use .partial() for optional versions of schemas"
+      - "Use .merge() to combine schemas"
+      - "Use .passthrough() only when you explicitly need extra fields"
+    patterns:
+      extend: |
+        // ✅ Good: Extending base schema
+        const CreateUserSchema = Zparticipants.extend({
+          password: z.string().min(8),
+        });
+      pick: |
+        // ✅ Good: Picking specific fields
+        const UserSummarySchema = Zparticipants.pick({
+          id: true,
+          created_at: true,
+        });
+      omit: |
+        // ✅ Good: Omitting fields for updates
+        const UpdateUserSchema = Zparticipants.omit({
+          id: true,
+          created_at: true,
+          created_by: true,
+        });
+      partial: |
+        // ✅ Good: Partial for optional updates
+        const PatchUserSchema = Zparticipants.partial();
+
+additional_best_practices:
+  strict_mode:
+    description: "Enable strict TypeScript configuration"
+    tsconfig:
+      strict: true
+      noImplicitAny: true
+      strictNullChecks: true
+      noUncheckedIndexedAccess: true
+
+  discriminated_unions:
+    description: "Use discriminated unions for state management"
+    pattern: |
+      // ✅ Good: Discriminated union for async states
+      type AsyncState<T> =
+        | { status: 'idle' }
+        | { status: 'loading' }
+        | { status: 'success'; data: T }
+        | { status: 'error'; error: Error };
+
+  const_assertions:
+    description: "Use const assertions for literal types"
+    pattern: |
+      // ✅ Good: Const assertion for literal arrays
+      const STATUSES = ['active', 'inactive', 'pending'] as const;
+      type Status = typeof STATUSES[number]; // 'active' | 'inactive' | 'pending'
+
+  branded_types:
+    description: "Use branded types for type-safe IDs"
+    pattern: |
+      // ✅ Good: Branded type for IDs
+      const UserId = z.string().uuid().brand<'UserId'>();
+      type UserId = z.infer<typeof UserId>;
+
+      const RecordId = z.string().uuid().brand<'RecordId'>();
+      type RecordId = z.infer<typeof RecordId>;
+
+      // Now these are different types and can't be mixed
+      function getUser(id: UserId): Promise<User> { ... }
+
+  exhaustive_checks:
+    description: "Use exhaustive checks for union types"
+    pattern: |
+      // ✅ Good: Exhaustive switch with never
+      function assertNever(x: never): never {
+        throw new Error(`Unexpected value: ${x}`);
+      }
+
+      function handleStatus(status: Status) {
+        switch (status) {
+          case 'active': return 'Active';
+          case 'inactive': return 'Inactive';
+          case 'pending': return 'Pending';
+          default: return assertNever(status);
+        }
+      }
+
+  return_types:
+    description: "Explicitly annotate return types for public APIs"
+    rules:
+      - "Always annotate return types for exported functions"
+      - "Always annotate return types for async functions"
+      - "Let TypeScript infer return types for simple internal functions"
+
+  error_types:
+    description: "Use typed errors for better error handling"
+    pattern: |
+      // ✅ Good: Typed result pattern
+      const ResultSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+        z.discriminatedUnion('success', [
+          z.object({ success: z.literal(true), data: dataSchema }),
+          z.object({ success: z.literal(false), error: z.string() }),
+        ]);
+
+  form_validation:
+    description: "Use Zod schemas for form validation"
+    rules:
+      - "Define form schemas that match your data schemas"
+      - "Use .refine() for cross-field validation"
+      - "Use .transform() to normalize data before submission"
+
+common_mistakes:
+  - mistake: "Creating duplicate type definitions"
+    fix: "Import from packages/types or the schema files"
+
+  - mistake: "Using `any` to bypass type errors"
+    fix: "Use `unknown` and narrow with type guards or Zod"
+
+  - mistake: "Type assertions inside functions"
+    fix: "Validate at boundaries, trust types internally"
+
+  - mistake: "Not handling null/undefined"
+    fix: "Use strict null checks and handle all cases"
+
+  - mistake: "Ignoring Zod parse errors"
+    fix: "Use safeParse and handle the error case"
+
+  - mistake: "Creating types manually instead of deriving from Zod"
+    fix: "Always use z.infer<typeof Schema>"
+
+mcp_workflow:
+  description: "When schema changes are needed"
+  steps:
+    1: "Identify the required schema change"
+    2: "Use MCP tools to modify the FileMaker database"
+    3: "Alert the user: 'Schema modified. Please run `pnpm typegen` to regenerate types.'"
+    4: "After regeneration, update any custom overrides if needed"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

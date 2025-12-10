@@ -1,0 +1,247 @@
+---
+description: |
+  Form handling patterns using React Hook Form with Zod validation.
+  Ensures consistent, type-safe form implementations across the application.
+globs:
+  - "**/*.tsx"
+  - "**/forms/**"
+  - "**/components/**"
+alwaysApply: true
+---
+
+# Form Patterns
+
+Standards for building forms using React Hook Form with Zod validation.
+
+<rule>
+name: form_patterns
+description: Ensures all forms use React Hook Form with Zod schema validation
+
+required_packages:
+  - "react-hook-form"
+  - "@hookform/resolvers"
+  - "zod" # Already installed
+
+core_principles:
+  always_use_rhf:
+    description: "All forms MUST use React Hook Form with Zod validation"
+    rules:
+      - "NEVER use uncontrolled forms with manual validation"
+      - "NEVER use useState for form state management"
+      - "ALWAYS define a Zod schema for form validation"
+      - "ALWAYS use zodResolver to connect the schema"
+      - "Derive form types from the Zod schema"
+
+  schema_first_forms:
+    description: "Define the validation schema before building the form"
+    rules:
+      - "Create Zod schema matching form fields"
+      - "Use z.infer<> to derive the form data type"
+      - "Reuse existing schemas from @notre/types when applicable"
+      - "Extend or pick from existing schemas for form variations"
+
+basic_pattern:
+  description: "Standard form implementation pattern"
+  example: |
+    import { useForm } from 'react-hook-form';
+    import { zodResolver } from '@hookform/resolvers/zod';
+    import { z } from 'zod/v4';
+
+    // 1. Define the schema
+    const FormSchema = z.object({
+      email: z.string().email('Invalid email address'),
+      password: z.string().min(8, 'Password must be at least 8 characters'),
+    });
+
+    // 2. Derive the type from schema
+    type FormData = z.infer<typeof FormSchema>;
+
+    // 3. Build the form component
+    function LoginForm() {
+      const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+      } = useForm<FormData>({
+        resolver: zodResolver(FormSchema),
+        defaultValues: {
+          email: '',
+          password: '',
+        },
+      });
+
+      const onSubmit = async (data: FormData) => {
+        // data is fully typed and validated
+        await submitLogin(data);
+      };
+
+      return (
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <input {...register('email')} type="email" />
+            {errors.email && <span>{errors.email.message}</span>}
+          </div>
+          <div>
+            <input {...register('password')} type="password" />
+            {errors.password && <span>{errors.password.message}</span>}
+          </div>
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </button>
+        </form>
+      );
+    }
+
+advanced_patterns:
+  reuse_existing_schemas:
+    description: "Extend or pick from existing database schemas"
+    example: |
+      import { Zparticipants } from '@notre/types';
+
+      // Pick fields for a create form
+      const CreateParticipantSchema = Zparticipants.pick({
+        email: true,
+        name: true,
+      }).extend({
+        confirmEmail: z.string().email(),
+      }).refine(
+        (data) => data.email === data.confirmEmail,
+        { message: 'Emails must match', path: ['confirmEmail'] }
+      );
+
+  async_validation:
+    description: "Use refine/superRefine for async validation"
+    example: |
+      const SignupSchema = z.object({
+        email: z.string().email(),
+        username: z.string().min(3),
+      }).superRefine(async (data, ctx) => {
+        const exists = await checkUsernameExists(data.username);
+        if (exists) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Username already taken',
+            path: ['username'],
+          });
+        }
+      });
+
+  conditional_fields:
+    description: "Handle conditional/dynamic fields"
+    example: |
+      const FormSchema = z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('individual'),
+          firstName: z.string().min(1),
+          lastName: z.string().min(1),
+        }),
+        z.object({
+          type: z.literal('organization'),
+          orgName: z.string().min(1),
+          taxId: z.string().optional(),
+        }),
+      ]);
+
+  with_default_values:
+    description: "Pre-populate forms with existing data"
+    example: |
+      function EditForm({ participant }: { participant: Tparticipants }) {
+        const form = useForm<FormData>({
+          resolver: zodResolver(FormSchema),
+          defaultValues: {
+            // Map database fields to form fields
+            email: participant.email,
+            name: participant.name,
+          },
+        });
+        // ...
+      }
+
+  watch_and_transform:
+    description: "Use watch for dependent fields, transform for data normalization"
+    example: |
+      const FormSchema = z.object({
+        phone: z.string().transform((val) => val.replace(/\D/g, '')),
+        amount: z.coerce.number().positive(),
+      });
+
+      function MyForm() {
+        const { watch, setValue } = useForm<FormData>({
+          resolver: zodResolver(FormSchema),
+        });
+
+        const watchedValue = watch('someField');
+        // React to changes...
+      }
+
+error_handling:
+  display_errors:
+    description: "Always display validation errors to users"
+    rules:
+      - "Show field-level errors next to inputs"
+      - "Use aria-invalid and aria-describedby for accessibility"
+      - "Consider toast notifications for submission errors"
+    example: |
+      <div>
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          {...register('email')}
+          aria-invalid={errors.email ? 'true' : 'false'}
+          aria-describedby={errors.email ? 'email-error' : undefined}
+        />
+        {errors.email && (
+          <span id="email-error" role="alert">
+            {errors.email.message}
+          </span>
+        )}
+      </div>
+
+  submission_errors:
+    description: "Handle server-side validation errors"
+    example: |
+      const onSubmit = async (data: FormData) => {
+        try {
+          await submitForm(data);
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            // Set server-side field errors
+            error.fieldErrors.forEach(({ field, message }) => {
+              setError(field, { message });
+            });
+          } else {
+            // Show generic error
+            toast.error('Something went wrong');
+          }
+        }
+      };
+
+forbidden_patterns:
+  - pattern: "useState for form field values"
+    reason: "React Hook Form handles state more efficiently"
+    use_instead: "useForm with register"
+
+  - pattern: "Manual onChange handlers for validation"
+    reason: "Zod resolver handles validation automatically"
+    use_instead: "zodResolver with schema"
+
+  - pattern: "Inline validation logic"
+    reason: "Validation should be declarative in schema"
+    use_instead: "Zod schema with refinements"
+
+  - pattern: "Type assertions for form data"
+    reason: "Types should be inferred from schema"
+    use_instead: "z.infer<typeof Schema>"
+
+  - pattern: "Submitting without validation"
+    reason: "All form data must be validated"
+    use_instead: "handleSubmit wrapper"
+
+installation:
+  description: "Required packages if not already installed"
+  command: "pnpm add react-hook-form @hookform/resolvers"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

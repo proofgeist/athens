@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { protectedProcedure } from "../index";
 import { SmartListLayout } from "@athens/fm-client";
 
 // Input schemas
@@ -21,9 +21,9 @@ const getStatusSummaryInput = z.object({
   project_asset_id: z.string().optional(),
 });
 
-// SmartList router
+// SmartList router (protected - requires authentication)
 export const smartListRouter = {
-  list: publicProcedure
+  list: protectedProcedure
     .input(listSmartListInput)
     .handler(async ({ input }) => {
       const { project_asset_id, priority, status, system_group, milestone_target, limit, offset } = input;
@@ -58,7 +58,7 @@ export const smartListRouter = {
       }
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getSmartListByIdInput)
     .handler(async ({ input }) => {
       const result = await SmartListLayout.find({
@@ -74,7 +74,7 @@ export const smartListRouter = {
     }),
 
   // Get status summary (counts by status/priority)
-  getStatusSummary: publicProcedure
+  getStatusSummary: protectedProcedure
     .input(getStatusSummaryInput)
     .handler(async ({ input }) => {
       const { project_asset_id } = input;
