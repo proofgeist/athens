@@ -1,0 +1,37 @@
+{
+  "$schema": "https://proofkit.dev/typegen-config-schema.json",
+  "config": [
+    {
+      "layouts": [
+        {
+          "layoutName": "Assets",
+          "schemaName": "Assets",
+          "valueLists": "allowEmpty",
+        },
+        {
+          "layoutName": "Projects",
+          "schemaName": "Projects",
+          "valueLists": "allowEmpty",
+        },
+        {
+          "layoutName": "ProjectAssets",
+          "schemaName": "ProjectAssets",
+          "valueLists": "allowEmpty",
+        },
+        {
+          "layoutName": "IssuesSummary",
+          "schemaName": "IssuesSummary",
+          "valueLists": "allowEmpty",
+        },
+        {
+          "layoutName": "SmartList",
+          "schemaName": "SmartList",
+          "valueLists": "allowEmpty",
+        },
+      ],
+      "path": "./src/schemas/filemaker",
+      "clearOldFiles": true,
+      "clientSuffix": "Layout",
+    }
+  ]
+}
