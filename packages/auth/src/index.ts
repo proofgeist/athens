@@ -12,5 +12,8 @@ export const auth = betterAuth({
       database: process.env.FM_DATABASE,
     },
   }),
+  emailAndPassword: {
+    enabled: true,
+  },
   plugins: [nextCookies()],
 });
