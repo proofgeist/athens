@@ -9,9 +9,13 @@
     }
   },
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "devDependencies": {
-    "@athens/config": "workspace:*"
+    "@athens/config": "workspace:*",
+    "vitest": "^2.1.0"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -24,6 +28,7 @@
     "next": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:",
-    "@athens/auth": "workspace:*"
+    "@athens/auth": "workspace:*",
+    "@athens/fm-client": "workspace:*"
   }
 }

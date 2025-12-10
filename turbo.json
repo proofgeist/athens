@@ -16,6 +16,14 @@
 		"dev": {
 			"cache": false,
 			"persistent": true
+		},
+		"typegen": {
+			"cache": false,
+			"outputs": ["src/schemas/**"]
+		},
+		"test": {
+			"cache": false,
+			"dependsOn": ["^build"]
 		}
 	}
 }

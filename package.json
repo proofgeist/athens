@@ -12,7 +12,10 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",
-    "dev:web": "turbo -F web dev"
+    "dev:web": "turbo -F web dev",
+    "typegen": "turbo -F @athens/fm-client typegen",
+    "test": "turbo -F @athens/api test",
+    "test:api": "turbo -F @athens/api test"
   },
   "dependencies": {
     "dotenv": "^17.2.2",
