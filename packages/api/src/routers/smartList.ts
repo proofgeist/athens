@@ -12,7 +12,7 @@ const listSmartListInput = z.object({
   milestone_target: z.string().optional(),
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
-  includeRelated: z.boolean().default(false), // Option to include project/asset info
+  includeRelated: z.boolean().default(false),
 });
 
 const getSmartListByIdInput = z.object({
@@ -23,10 +23,72 @@ const getStatusSummaryInput = z.object({
   project_asset_id: z.string().optional(),
 });
 
+// Output schemas - define the shape of data returned by the API
+const ProjectInfoSchema = z.object({
+  name: z.string().nullable(),
+  region: z.string().nullable(),
+  status: z.string().nullable(),
+});
+
+const AssetInfoSchema = z.object({
+  name: z.string().nullable(),
+  type: z.string().nullable(),
+});
+
+const ProjectAssetInfoSchema = z.object({
+  id: z.string().nullable(),
+  project_id: z.string().nullable(),
+  asset_id: z.string().nullable(),
+  Projects: ProjectInfoSchema.nullable().optional(),
+  Assets: AssetInfoSchema.nullable().optional(),
+});
+
+const SmartListItemSchema = z.object({
+  id: z.string().nullable(),
+  project_asset_id: z.string().nullable(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  priority: z.string().nullable(),
+  status: z.string().nullable(),
+  due_date: z.string().nullable(),
+  milestone_target: z.string().nullable(),
+  system_group: z.string().nullable(),
+  assigned_to: z.string().nullable(),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+  // Expand returns an array of related records
+  ProjectAssets: z.array(ProjectAssetInfoSchema).optional(),
+});
+
+const listSmartListOutput = z.object({
+  data: z.array(SmartListItemSchema),
+  total: z.number(),
+});
+
+const statusSummaryOutput = z.object({
+  total: z.number(),
+  byStatus: z.object({
+    Open: z.number(),
+    Closed: z.number(),
+    Deferred: z.number(),
+  }),
+  byPriority: z.object({
+    High: z.number(),
+    Medium: z.number(),
+    Low: z.number(),
+  }),
+  byPriorityAndStatus: z.object({
+    High: z.object({ Open: z.number(), Closed: z.number() }),
+    Medium: z.object({ Open: z.number(), Closed: z.number() }),
+    Low: z.object({ Open: z.number(), Closed: z.number() }),
+  }),
+});
+
 // SmartList router (protected - requires authentication)
 export const smartListRouter = {
   list: protectedProcedure
     .input(listSmartListInput)
+    .output(listSmartListOutput)
     .handler(async ({ input }) => {
       const { project_asset_id, priority, status, system_group, milestone_target, limit, offset, includeRelated } = input;
 
@@ -37,38 +99,51 @@ export const smartListRouter = {
       if (system_group) filters.push(eq(SmartList.system_group, system_group));
       if (milestone_target) filters.push(eq(SmartList.milestone_target, milestone_target));
 
-      let query = db.from(SmartList).list().top(limit).skip(offset);
+      // Build base query
+      let baseQuery = db.from(SmartList).list().top(limit).skip(offset);
       
       if (filters.length > 0) {
-        query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
+        baseQuery = baseQuery.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
 
-      // Expand to include related ProjectAssets with nested Projects and Assets
+      // Execute with or without expand based on includeRelated
       if (includeRelated) {
-        query = query.expand(ProjectAssets, (paBuilder) =>
-          paBuilder
-            .select({
-              id: ProjectAssets.id,
-              project_id: ProjectAssets.project_id,
-              asset_id: ProjectAssets.asset_id,
-            })
-            .expand(Projects, (pBuilder) =>
-              pBuilder.select({
-                name: Projects.name,
-                region: Projects.region,
-                status: Projects.status,
+        const result = await baseQuery
+          .expand(ProjectAssets, (paBuilder) =>
+            paBuilder
+              .select({
+                id: ProjectAssets.id,
+                project_id: ProjectAssets.project_id,
+                asset_id: ProjectAssets.asset_id,
               })
-            )
-            .expand(Assets, (aBuilder) =>
-              aBuilder.select({
-                name: Assets.name,
-                type: Assets.type,
-              })
-            )
-        );
+              .expand(Projects, (pBuilder) =>
+                pBuilder.select({
+                  name: Projects.name,
+                  region: Projects.region,
+                  status: Projects.status,
+                })
+              )
+              .expand(Assets, (aBuilder) =>
+                aBuilder.select({
+                  name: Assets.name,
+                  type: Assets.type,
+                })
+              )
+          )
+          .execute();
+
+        if (result.error) {
+          return { data: [], total: 0 };
+        }
+
+        return {
+          data: result.data ?? [],
+          total: result.data?.length ?? 0,
+        };
       }
 
-      const result = await query.execute();
+      // Without expand
+      const result = await baseQuery.execute();
 
       if (result.error) {
         return { data: [], total: 0 };
@@ -82,8 +157,8 @@ export const smartListRouter = {
 
   getById: protectedProcedure
     .input(getSmartListByIdInput)
+    .output(SmartListItemSchema)
     .handler(async ({ input }) => {
-      // Get with related data for detail view
       const result = await db
         .from(SmartList)
         .list()
@@ -101,7 +176,6 @@ export const smartListRouter = {
               aBuilder.select({
                 name: Assets.name,
                 type: Assets.type,
-                location: Assets.location,
               })
             )
         )
@@ -115,9 +189,9 @@ export const smartListRouter = {
       return result.data;
     }),
 
-  // Get status summary (counts by status/priority)
   getStatusSummary: protectedProcedure
     .input(getStatusSummaryInput)
+    .output(statusSummaryOutput)
     .handler(async ({ input }) => {
       const { project_asset_id } = input;
 
@@ -144,7 +218,6 @@ export const smartListRouter = {
 
       const data = result.data;
 
-      // Count by status
       const byStatus = { Open: 0, Closed: 0, Deferred: 0 };
       const byPriority = { High: 0, Medium: 0, Low: 0 };
       const byPriorityAndStatus = {
@@ -154,14 +227,14 @@ export const smartListRouter = {
       };
 
       for (const item of data) {
-        const status = item.status as keyof typeof byStatus;
-        const priority = item.priority as keyof typeof byPriority;
+        const itemStatus = item.status as keyof typeof byStatus;
+        const itemPriority = item.priority as keyof typeof byPriority;
 
-        if (status in byStatus) byStatus[status]++;
-        if (priority in byPriority) byPriority[priority]++;
+        if (itemStatus in byStatus) byStatus[itemStatus]++;
+        if (itemPriority in byPriority) byPriority[itemPriority]++;
 
-        if (priority in byPriorityAndStatus && (status === "Open" || status === "Closed")) {
-          byPriorityAndStatus[priority][status]++;
+        if (itemPriority in byPriorityAndStatus && (itemStatus === "Open" || itemStatus === "Closed")) {
+          byPriorityAndStatus[itemPriority][itemStatus]++;
         }
       }
 

@@ -3,30 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// SmartList item shape from API (with expanded related data)
-interface SmartListItem {
-	id: string;
-	title: string;
-	priority: string;
-	status: string;
-	system_group: string | null;
-	due_date: string | null;
-	ProjectAssets?: {
-		id: string;
-		project_id: string;
-		asset_id: string;
-		Projects?: {
-			name: string;
-			region: string;
-			status: string;
-		};
-		Assets?: {
-			name: string;
-			type: string;
-		};
-	};
-}
-
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
 	const actionStats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
@@ -116,7 +92,7 @@ export function RecentActivity() {
 		);
 	}
 
-	const items = actionItems.data?.data ?? []
+	const items = actionItems.data?.data ?? [];
 
 	if (items.length === 0) {
 		return (
@@ -127,9 +103,10 @@ export function RecentActivity() {
 	return (
 		<div className="space-y-4">
 			{items.map((item) => {
-				// Extract related project/asset names
-				const projectName = item.ProjectAssets?.Projects?.name;
-				const assetName = item.ProjectAssets?.Assets?.name;
+				// Extract related project/asset names (expand returns array)
+				const projectAsset = item.ProjectAssets?.[0];
+				const projectName = projectAsset?.Projects?.name;
+				const assetName = projectAsset?.Assets?.name;
 				const contextInfo = projectName || assetName 
 					? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
 					: item.system_group || "General";
