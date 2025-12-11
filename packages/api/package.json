@@ -21,14 +21,14 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@orpc/server": "catalog:",
+    "@athens/auth": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
-    "next": "catalog:",
+    "@proofkit/fmodata": "^0.1.0-alpha.17",
     "dotenv": "catalog:",
-    "zod": "catalog:",
-    "@athens/auth": "workspace:*",
-    "@athens/fm-client": "workspace:*"
+    "next": "catalog:",
+    "zod": "catalog:"
   }
 }
