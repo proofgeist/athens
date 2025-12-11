@@ -11,7 +11,10 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "download-metadata": "bun download-metadata.ts",
+    "typegen": "bun typegen-starter.ts tests/fixtures/metadata.xml src/db/schemas/filemaker/generated",
+    "generate": "bun download-metadata.ts && bun typegen-starter.ts tests/fixtures/metadata.xml src/db/schemas/filemaker/generated"
   },
   "devDependencies": {
     "@athens/config": "workspace:*",
@@ -28,6 +31,7 @@
     "@orpc/zod": "catalog:",
     "@proofkit/fmodata": "^0.1.0-alpha.17",
     "dotenv": "catalog:",
+    "fast-xml-parser": "^5.3.2",
     "next": "catalog:",
     "zod": "catalog:"
   }

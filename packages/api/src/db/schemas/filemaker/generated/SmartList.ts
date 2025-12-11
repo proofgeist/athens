@@ -19,5 +19,5 @@ export const SmartList = fmTableOccurrence("SmartList", {
     "id": textField().primaryKey().entityId("FMFID:51540672646")
 }, {
   entityId: "FMTID:1065094",
-  navigationPaths: ["ProjectAssets"]
+  navigationPaths: ["ProjectAssets","Projects","Assets"]
 });

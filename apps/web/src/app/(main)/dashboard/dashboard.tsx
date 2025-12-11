@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Extended type for SmartList items with enriched project/asset info
+type EnrichedSmartListItem = {
+	projectName?: string | null;
+	projectRegion?: string | null;
+	assetName?: string | null;
+	assetType?: string | null;
+};
+
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
 	const actionStats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
@@ -103,10 +111,10 @@ export function RecentActivity() {
 	return (
 		<div className="space-y-4">
 			{items.map((item) => {
-				// Extract related project/asset names (expand returns array)
-				const projectAsset = item.ProjectAssets?.[0];
-				const projectName = projectAsset?.Projects?.name;
-				const assetName = projectAsset?.Assets?.name;
+				// Extract enriched project/asset names (flattened by API)
+				const enriched = item as typeof item & EnrichedSmartListItem;
+				const projectName = enriched.projectName;
+				const assetName = enriched.assetName;
 				const contextInfo = projectName || assetName 
 					? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
 					: item.system_group || "General";

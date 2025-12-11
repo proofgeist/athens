@@ -10,6 +10,9 @@ dist
 coverage
 *.lcov
 
+# downloaded metadata fixtures
+tests/fixtures/
+
 # logs
 logs
 _.log
