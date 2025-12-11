@@ -67,9 +67,9 @@ export function NavMain({
 												<SidebarMenuSubItem key={subItem.title}>
 													<SidebarMenuSubButton
 														asChild
-														isActive={pathname === subItem.url}
+														isActive={pathname === subItem.url || pathname.startsWith(subItem.url + "?")}
 													>
-														<Link href={subItem.url}>
+														<Link href={subItem.url as "/"}>
 															<span>{subItem.title}</span>
 														</Link>
 													</SidebarMenuSubButton>
@@ -86,7 +86,7 @@ export function NavMain({
 					return (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
-								<Link href={item.url}>
+								<Link href={item.url as "/"}>
 									{item.icon && <item.icon />}
 									<span>{item.title}</span>
 								</Link>

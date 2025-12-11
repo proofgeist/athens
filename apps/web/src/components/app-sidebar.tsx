@@ -8,6 +8,7 @@ import {
 	BarChart3,
 	Settings,
 	HelpCircle,
+	type LucideIcon,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -22,7 +23,18 @@ import {
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 
-const navItems = [
+type NavItem = {
+	title: string;
+	url: string;
+	icon?: LucideIcon;
+	isActive?: boolean;
+	items?: {
+		title: string;
+		url: string;
+	}[];
+};
+
+const navItems: NavItem[] = [
 	{
 		title: "Dashboard",
 		url: "/dashboard",
