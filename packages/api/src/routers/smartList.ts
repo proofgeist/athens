@@ -23,10 +23,37 @@ const getStatusSummaryInput = z.object({
   project_asset_id: z.string().optional(),
 });
 
+// Output schemas - define the shape returned by procedures
+const smartListItemSchema = z.object({
+  id: z.string().nullable(),
+  project_asset_id: z.string().nullable(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  priority: z.string().nullable(),
+  status: z.string().nullable(),
+  due_date: z.string().nullable(),
+  milestone_target: z.string().nullable(),
+  system_group: z.string().nullable(),
+  assigned_to: z.string().nullable(),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+  // Enriched fields from related data (optional - only present when includeRelated=true)
+  projectName: z.string().nullable().optional(),
+  projectRegion: z.string().nullable().optional(),
+  assetName: z.string().nullable().optional(),
+  assetType: z.string().nullable().optional(),
+});
+
+const listSmartListOutput = z.object({
+  data: z.array(smartListItemSchema),
+  total: z.number(),
+});
+
 // SmartList router (protected - requires authentication)
 export const smartListRouter = {
   list: protectedProcedure
     .input(listSmartListInput)
+    .output(listSmartListOutput)
     .handler(async ({ input }) => {
       const { project_asset_id, priority, status, system_group, milestone_target, limit, offset, includeRelated } = input;
 
