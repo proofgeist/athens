@@ -31,10 +31,10 @@ todos:
     status: completed
   - id: dashboard-layout
     content: Build collapsible sidebar layout and top navigation
-    status: pending
+    status: completed
   - id: dashboard-page
     content: Create dashboard home page with stats cards and project list/grid
-    status: pending
+    status: in_progress
   - id: project-detail-page
     content: Build project detail page with completion gauges and charts
     status: pending
