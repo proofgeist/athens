@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { SmartListLayout } from "@athens/fm-client";
+import { db, SmartList } from "../db";
 
 // Input schemas
 const listSmartListInput = z.object({
@@ -28,49 +29,46 @@ export const smartListRouter = {
     .handler(async ({ input }) => {
       const { project_asset_id, priority, status, system_group, milestone_target, limit, offset } = input;
 
-      const query: Record<string, string> = {};
+      const filters = [];
+      if (project_asset_id) filters.push(eq(SmartList.project_asset_id, project_asset_id));
+      if (priority) filters.push(eq(SmartList.priority, priority));
+      if (status) filters.push(eq(SmartList.status, status));
+      if (system_group) filters.push(eq(SmartList.system_group, system_group));
+      if (milestone_target) filters.push(eq(SmartList.milestone_target, milestone_target));
+
+      let query = db.from(SmartList).list().top(limit).skip(offset);
       
-      if (project_asset_id) query.project_asset_id = project_asset_id;
-      if (priority) query.priority = priority;
-      if (status) query.status = status;
-      if (system_group) query.system_group = system_group;
-      if (milestone_target) query.milestone_target = milestone_target;
-
-      try {
-        const queryArray = Object.keys(query).length > 0 ? [query] : [{ id: "*" }];
-        
-        const result = await SmartListLayout.find({
-          query: queryArray,
-          limit,
-          offset,
-        });
-
-        const data = result.data || [];
-        return {
-          data,
-          total: result.dataInfo?.foundCount || data.length,
-        };
-      } catch (error) {
-        return {
-          data: [] as Array<{ recordId: string; fieldData: { id: string; project_asset_id: string; title: string; description: string; priority: string; status: string; due_date: string; milestone_target: string; system_group: string; assigned_to: string; created_at: string; updated_at: string } }>,
-          total: 0,
-        };
+      if (filters.length > 0) {
+        query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
+
+      const result = await query.execute();
+
+      if (result.error) {
+        return { data: [], total: 0 };
+      }
+
+      return {
+        data: result.data ?? [],
+        total: result.data?.length ?? 0,
+      };
     }),
 
   getById: protectedProcedure
     .input(getSmartListByIdInput)
     .handler(async ({ input }) => {
-      const result = await SmartListLayout.find({
-        query: [{ id: input.id }],
-        limit: 1,
-      });
+      const result = await db
+        .from(SmartList)
+        .list()
+        .where(eq(SmartList.id, input.id))
+        .single()
+        .execute();
 
-      if (!result.data || result.data.length === 0) {
+      if (result.error || !result.data) {
         throw new Error(`SmartList item not found: ${input.id}`);
       }
 
-      return result.data[0];
+      return result.data;
     }),
 
   // Get status summary (counts by status/priority)
@@ -79,58 +77,15 @@ export const smartListRouter = {
     .handler(async ({ input }) => {
       const { project_asset_id } = input;
 
-      try {
-        const queryArray = project_asset_id 
-          ? [{ project_asset_id }] 
-          : [{ id: "*" }];
-          
-        const result = await SmartListLayout.find({
-          query: queryArray,
-          limit: 1000,
-        });
+      let query = db.from(SmartList).list().top(1000);
+      
+      if (project_asset_id) {
+        query = query.where(eq(SmartList.project_asset_id, project_asset_id));
+      }
 
-        const data = result.data || [];
+      const result = await query.execute();
 
-        // Count by status
-        const byStatus = {
-          Open: 0,
-          Closed: 0,
-          Deferred: 0,
-        };
-
-        // Count by priority
-        const byPriority = {
-          High: 0,
-          Medium: 0,
-          Low: 0,
-        };
-
-        // Count by priority and status
-        const byPriorityAndStatus = {
-          High: { Open: 0, Closed: 0 },
-          Medium: { Open: 0, Closed: 0 },
-          Low: { Open: 0, Closed: 0 },
-        };
-
-        for (const item of data) {
-          const status = item.fieldData.status as keyof typeof byStatus;
-          const priority = item.fieldData.priority as keyof typeof byPriority;
-
-          if (status in byStatus) byStatus[status]++;
-          if (priority in byPriority) byPriority[priority]++;
-
-          if (priority in byPriorityAndStatus && (status === 'Open' || status === 'Closed')) {
-            byPriorityAndStatus[priority][status]++;
-          }
-        }
-
-        return {
-          total: data.length,
-          byStatus,
-          byPriority,
-          byPriorityAndStatus,
-        };
-      } catch (error) {
+      if (result.error || !result.data) {
         return {
           total: 0,
           byStatus: { Open: 0, Closed: 0, Deferred: 0 },
@@ -142,5 +97,35 @@ export const smartListRouter = {
           },
         };
       }
+
+      const data = result.data;
+
+      // Count by status
+      const byStatus = { Open: 0, Closed: 0, Deferred: 0 };
+      const byPriority = { High: 0, Medium: 0, Low: 0 };
+      const byPriorityAndStatus = {
+        High: { Open: 0, Closed: 0 },
+        Medium: { Open: 0, Closed: 0 },
+        Low: { Open: 0, Closed: 0 },
+      };
+
+      for (const item of data) {
+        const status = item.status as keyof typeof byStatus;
+        const priority = item.priority as keyof typeof byPriority;
+
+        if (status in byStatus) byStatus[status]++;
+        if (priority in byPriority) byPriority[priority]++;
+
+        if (priority in byPriorityAndStatus && (status === "Open" || status === "Closed")) {
+          byPriorityAndStatus[priority][status]++;
+        }
+      }
+
+      return {
+        total: data.length,
+        byStatus,
+        byPriority,
+        byPriorityAndStatus,
+      };
     }),
 };

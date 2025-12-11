@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { ProjectAssetsLayout } from "@athens/fm-client";
+import { db, ProjectAssets } from "../db";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -21,88 +22,50 @@ export const projectAssetsRouter = {
     .handler(async ({ input }) => {
       const { project_id, asset_id, limit, offset } = input;
 
-      const query: Record<string, string> = {};
+      const filters = [];
+      if (project_id) filters.push(eq(ProjectAssets.project_id, project_id));
+      if (asset_id) filters.push(eq(ProjectAssets.asset_id, asset_id));
+
+      let query = db.from(ProjectAssets).list().top(limit).skip(offset);
       
-      if (project_id) query.project_id = project_id;
-      if (asset_id) query.asset_id = asset_id;
-
-      try {
-        const queryArray = Object.keys(query).length > 0 ? [query] : [{ id: "*" }];
-        
-        const result = await ProjectAssetsLayout.find({
-          query: queryArray,
-          limit,
-          offset,
-        });
-
-        const data = result.data || [];
-        return {
-          data,
-          total: result.dataInfo?.foundCount || data.length,
-        };
-      } catch (error) {
-        return {
-          data: [] as Array<{ recordId: string; fieldData: { id: string; project_id: string; asset_id: string; raptor_checklist_completion: string | number; sit_completion: string | number; doc_verification_completion: string | number; checklist_remaining: string | number; checklist_closed: string | number; checklist_non_conforming: string | number; checklist_not_applicable: string | number; checklist_deferred: string | number } }>,
-          total: 0,
-        };
+      if (filters.length > 0) {
+        query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
+
+      const result = await query.execute();
+
+      if (result.error) {
+        return { data: [], total: 0 };
+      }
+
+      return {
+        data: result.data ?? [],
+        total: result.data?.length ?? 0,
+      };
     }),
 
   getById: protectedProcedure
     .input(getProjectAssetByIdInput)
     .handler(async ({ input }) => {
-      const result = await ProjectAssetsLayout.find({
-        query: [{ id: input.id }],
-        limit: 1,
-      });
+      const result = await db
+        .from(ProjectAssets)
+        .list()
+        .where(eq(ProjectAssets.id, input.id))
+        .single()
+        .execute();
 
-      if (!result.data || result.data.length === 0) {
+      if (result.error || !result.data) {
         throw new Error(`ProjectAsset not found: ${input.id}`);
       }
 
-      return result.data[0];
+      return result.data;
     }),
 
   // Get summary stats for dashboard
   getSummaryStats: protectedProcedure.handler(async () => {
-    try {
-      const result = await ProjectAssetsLayout.find({
-        query: [{ id: "*" }], // Get all
-        limit: 1000,
-      });
+    const result = await db.from(ProjectAssets).list().top(1000).execute();
 
-      const data = result.data || [];
-      const total = data.length;
-      
-      // Calculate averages
-      const avgCompletion = data.reduce((sum, pa) => {
-        const val = typeof pa.fieldData.raptor_checklist_completion === 'string' 
-          ? parseFloat(pa.fieldData.raptor_checklist_completion) 
-          : pa.fieldData.raptor_checklist_completion;
-        return sum + (val || 0);
-      }, 0) / (total || 1);
-
-      const avgSitCompletion = data.reduce((sum, pa) => {
-        const val = typeof pa.fieldData.sit_completion === 'string' 
-          ? parseFloat(pa.fieldData.sit_completion) 
-          : pa.fieldData.sit_completion;
-        return sum + (val || 0);
-      }, 0) / (total || 1);
-
-      const avgDocVerification = data.reduce((sum, pa) => {
-        const val = typeof pa.fieldData.doc_verification_completion === 'string' 
-          ? parseFloat(pa.fieldData.doc_verification_completion) 
-          : pa.fieldData.doc_verification_completion;
-        return sum + (val || 0);
-      }, 0) / (total || 1);
-
-      return {
-        totalProjects: total,
-        avgRaptorCompletion: Math.round(avgCompletion),
-        avgSitCompletion: Math.round(avgSitCompletion),
-        avgDocVerification: Math.round(avgDocVerification),
-      };
-    } catch (error) {
+    if (result.error || !result.data) {
       return {
         totalProjects: 0,
         avgRaptorCompletion: 0,
@@ -110,5 +73,30 @@ export const projectAssetsRouter = {
         avgDocVerification: 0,
       };
     }
+
+    const data = result.data;
+    const total = data.length;
+
+    // Calculate averages
+    let sumRaptor = 0;
+    let sumSit = 0;
+    let sumDoc = 0;
+
+    for (const pa of data) {
+      sumRaptor += pa.raptor_checklist_completion ?? 0;
+      sumSit += pa.sit_completion ?? 0;
+      sumDoc += pa.doc_verification_completion ?? 0;
+    }
+
+    const avgCompletion = sumRaptor / (total || 1);
+    const avgSitCompletion = sumSit / (total || 1);
+    const avgDocVerification = sumDoc / (total || 1);
+
+    return {
+      totalProjects: total,
+      avgRaptorCompletion: Math.round(avgCompletion),
+      avgSitCompletion: Math.round(avgSitCompletion),
+      avgDocVerification: Math.round(avgDocVerification),
+    };
   }),
 };

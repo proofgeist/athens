@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { AssetsLayout } from "@athens/fm-client";
+import { db, Assets } from "../db";
 
 // Input schemas
 const listAssetsInput = z.object({
@@ -21,45 +22,42 @@ export const assetsRouter = {
     .handler(async ({ input }) => {
       const { type, location, limit, offset } = input;
 
-      const query: Record<string, string> = {};
+      const filters = [];
+      if (type) filters.push(eq(Assets.type, type));
+      if (location) filters.push(eq(Assets.location, location));
+
+      let query = db.from(Assets).list().top(limit).skip(offset);
       
-      if (type) query.type = type;
-      if (location) query.location = location;
-
-      try {
-        const queryArray = Object.keys(query).length > 0 ? [query] : [{ id: "*" }];
-        
-        const result = await AssetsLayout.find({
-          query: queryArray,
-          limit,
-          offset,
-        });
-
-        const data = result.data || [];
-        return {
-          data,
-          total: result.dataInfo?.foundCount || data.length,
-        };
-      } catch (error) {
-        return {
-          data: [] as Array<{ recordId: string; fieldData: { id: string; name: string; type: string; location: string } }>,
-          total: 0,
-        };
+      if (filters.length > 0) {
+        query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
+
+      const result = await query.execute();
+
+      if (result.error) {
+        return { data: [], total: 0 };
+      }
+
+      return {
+        data: result.data ?? [],
+        total: result.data?.length ?? 0,
+      };
     }),
 
   getById: protectedProcedure
     .input(getAssetByIdInput)
     .handler(async ({ input }) => {
-      const result = await AssetsLayout.find({
-        query: [{ id: input.id }],
-        limit: 1,
-      });
+      const result = await db
+        .from(Assets)
+        .list()
+        .where(eq(Assets.id, input.id))
+        .single()
+        .execute();
 
-      if (!result.data || result.data.length === 0) {
+      if (result.error || !result.data) {
         throw new Error(`Asset not found: ${input.id}`);
       }
 
-      return result.data[0];
+      return result.data;
     }),
 };

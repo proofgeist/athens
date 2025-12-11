@@ -1,4 +1,4 @@
-import { protectedProcedure, publicProcedure } from "../index";
+import { publicProcedure } from "../index";
 import type { RouterClient } from "@orpc/server";
 import { projectsRouter } from "./projects";
 import { assetsRouter } from "./assets";
@@ -10,14 +10,6 @@ export const appRouter = {
   // Health check
   healthCheck: publicProcedure.handler(() => {
     return "OK";
-  }),
-
-  // Protected example
-  privateData: protectedProcedure.handler(({ context }) => {
-    return {
-      message: "This is private",
-      user: context.session?.user,
-    };
   }),
 
   // RAPTOR routers

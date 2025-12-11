@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { ProjectsLayout } from "@athens/fm-client";
+import { db, Projects } from "../db";
 
 // Input schemas
 const listProjectsInput = z.object({
@@ -23,50 +24,45 @@ export const projectsRouter = {
     .handler(async ({ input }) => {
       const { region, phase, risk_level, status, limit, offset } = input;
 
-      // Build query for FileMaker Data API
-      const query: Record<string, string> = {};
+      // Build filters
+      const filters = [];
+      if (region) filters.push(eq(Projects.region, region));
+      if (phase) filters.push(eq(Projects.phase, phase));
+      if (risk_level) filters.push(eq(Projects.risk_level, risk_level));
+      if (status) filters.push(eq(Projects.status, status));
+
+      let query = db.from(Projects).list().top(limit).skip(offset);
       
-      if (region) query.region = region;
-      if (phase) query.phase = phase;
-      if (risk_level) query.risk_level = risk_level;
-      if (status) query.status = status;
-
-      try {
-        // If no filters, use wildcard to get all
-        const queryArray = Object.keys(query).length > 0 ? [query] : [{ id: "*" }];
-        
-        const result = await ProjectsLayout.find({
-          query: queryArray,
-          limit,
-          offset,
-        });
-
-        const data = result.data || [];
-        return {
-          data,
-          total: result.dataInfo?.foundCount || data.length,
-        };
-      } catch (error) {
-        // Return empty if no records found
-        return {
-          data: [] as Array<{ recordId: string; fieldData: { id: string; name: string; region: string; phase: string; risk_level: string; overall_completion: string | number; readiness_score: string | number; status: string; created_at: string; updated_at: string } }>,
-          total: 0,
-        };
+      if (filters.length > 0) {
+        query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
+
+      const result = await query.execute();
+
+      if (result.error) {
+        return { data: [], total: 0 };
+      }
+
+      return {
+        data: result.data ?? [],
+        total: result.data?.length ?? 0,
+      };
     }),
 
   getById: protectedProcedure
     .input(getProjectByIdInput)
     .handler(async ({ input }) => {
-      const result = await ProjectsLayout.find({
-        query: [{ id: input.id }],
-        limit: 1,
-      });
+      const result = await db
+        .from(Projects)
+        .list()
+        .where(eq(Projects.id, input.id))
+        .single()
+        .execute();
 
-      if (!result.data || result.data.length === 0) {
+      if (result.error || !result.data) {
         throw new Error(`Project not found: ${input.id}`);
       }
 
-      return result.data[0];
+      return result.data;
     }),
 };

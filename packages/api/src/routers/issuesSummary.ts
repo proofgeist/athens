@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { eq, desc } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { IssuesSummaryLayout } from "@athens/fm-client";
+import { db, IssuesSummary } from "../db";
 
 // Input schemas
 const getByProjectAssetInput = z.object({
@@ -17,107 +18,72 @@ export const issuesSummaryRouter = {
   getByProjectAsset: protectedProcedure
     .input(getByProjectAssetInput)
     .handler(async ({ input }) => {
-      try {
-        const result = await IssuesSummaryLayout.find({
-          query: [{ project_asset_id: input.project_asset_id }],
-          limit: 100,
-        });
+      const result = await db
+        .from(IssuesSummary)
+        .list()
+        .where(eq(IssuesSummary.project_asset_id, input.project_asset_id))
+        .orderBy(desc(IssuesSummary.summary_date))
+        .top(1)
+        .execute();
 
-        if (!result.data || result.data.length === 0) {
-          return null;
-        }
-
-        // Get the latest summary (by summary_date)
-        const sorted = [...result.data].sort((a, b) => {
-          return b.fieldData.summary_date.localeCompare(a.fieldData.summary_date);
-        });
-
-        return sorted[0];
-      } catch (error) {
+      if (result.error || !result.data || result.data.length === 0) {
         return null;
       }
+
+      return result.data[0] ?? null;
     }),
 
   // Get progress per system group
   getSystemProgress: protectedProcedure
     .input(getSystemProgressInput)
     .handler(async ({ input }) => {
-      try {
-        const result = await IssuesSummaryLayout.find({
-          query: [{ project_asset_id: input.project_asset_id }],
-          limit: 100,
-        });
+      const result = await db
+        .from(IssuesSummary)
+        .list()
+        .where(eq(IssuesSummary.project_asset_id, input.project_asset_id))
+        .top(100)
+        .execute();
 
-        const data = result.data || [];
-
-        // Group by system_group and get latest progress for each
-        const systemProgressMap = new Map<string, number>();
-
-        for (const item of data) {
-          const group = item.fieldData.system_group;
-          const progress = typeof item.fieldData.system_progress === 'string'
-            ? parseFloat(item.fieldData.system_progress)
-            : item.fieldData.system_progress;
-
-          // Keep the latest value (assuming they're sorted or we take max)
-          const current = systemProgressMap.get(group) || 0;
-          if (progress > current) {
-            systemProgressMap.set(group, progress);
-          }
-        }
-
-        // Convert to array
-        const systemProgress = Array.from(systemProgressMap.entries()).map(([group, progress]) => ({
-          system_group: group,
-          progress,
-        }));
-
-        return {
-          systemProgress,
-        };
-      } catch (error) {
-        return {
-          systemProgress: [],
-        };
+      if (result.error || !result.data) {
+        return { systemProgress: [] };
       }
+
+      const data = result.data;
+
+      // Group by system_group and get latest progress for each
+      const systemProgressMap = new Map<string, number>();
+
+      for (const item of data) {
+        const group = item.system_group ?? "";
+        const progress = item.system_progress ?? 0;
+
+        // Keep the max value
+        const current = systemProgressMap.get(group) || 0;
+        if (progress > current) {
+          systemProgressMap.set(group, progress);
+        }
+      }
+
+      const systemProgress = Array.from(systemProgressMap.entries()).map(([group, progress]) => ({
+        system_group: group,
+        progress,
+      }));
+
+      return { systemProgress };
     }),
 
   // Get aggregated action item counts
   getActionItemCounts: protectedProcedure
     .input(getByProjectAssetInput)
     .handler(async ({ input }) => {
-      try {
-        const result = await IssuesSummaryLayout.find({
-          query: [{ project_asset_id: input.project_asset_id }],
-          limit: 100,
-        });
+      const result = await db
+        .from(IssuesSummary)
+        .list()
+        .where(eq(IssuesSummary.project_asset_id, input.project_asset_id))
+        .top(100)
+        .execute();
 
-        const data = result.data || [];
-
-        // Aggregate counts across all summaries
-        let openHigh = 0, closedHigh = 0;
-        let openMedium = 0, closedMedium = 0;
-        let openLow = 0, closedLow = 0;
-        let totalItems = 0;
-
-        for (const item of data) {
-          const fd = item.fieldData;
-          openHigh += typeof fd.open_high === 'string' ? parseInt(fd.open_high) : fd.open_high;
-          closedHigh += typeof fd.closed_high === 'string' ? parseInt(fd.closed_high) : fd.closed_high;
-          openMedium += typeof fd.open_medium === 'string' ? parseInt(fd.open_medium) : fd.open_medium;
-          closedMedium += typeof fd.closed_medium === 'string' ? parseInt(fd.closed_medium) : fd.closed_medium;
-          openLow += typeof fd.open_low === 'string' ? parseInt(fd.open_low) : fd.open_low;
-          closedLow += typeof fd.closed_low === 'string' ? parseInt(fd.closed_low) : fd.closed_low;
-          totalItems += typeof fd.total_items === 'string' ? parseInt(fd.total_items) : fd.total_items;
-        }
-
-        return {
-          totalItems,
-          high: { open: openHigh, closed: closedHigh },
-          medium: { open: openMedium, closed: closedMedium },
-          low: { open: openLow, closed: closedLow },
-        };
-      } catch (error) {
+      if (result.error || !result.data) {
         return {
           totalItems: 0,
           high: { open: 0, closed: 0 },
@@ -125,5 +91,30 @@ export const issuesSummaryRouter = {
           low: { open: 0, closed: 0 },
         };
       }
+
+      const data = result.data;
+
+      // Aggregate counts
+      let openHigh = 0, closedHigh = 0;
+      let openMedium = 0, closedMedium = 0;
+      let openLow = 0, closedLow = 0;
+      let totalItems = 0;
+
+      for (const item of data) {
+        openHigh += item.open_high ?? 0;
+        closedHigh += item.closed_high ?? 0;
+        openMedium += item.open_medium ?? 0;
+        closedMedium += item.closed_medium ?? 0;
+        openLow += item.open_low ?? 0;
+        closedLow += item.closed_low ?? 0;
+        totalItems += item.total_items ?? 0;
+      }
+
+      return {
+        totalItems,
+        high: { open: openHigh, closed: closedHigh },
+        medium: { open: openMedium, closed: closedMedium },
+        low: { open: openLow, closed: closedLow },
+      };
     }),
 };
