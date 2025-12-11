@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { eq } from '@proofkit/fmodata';
-import { db, SmartList } from '../db';
+import { db, SmartList, ProjectAssets, Projects, Assets } from '../db';
 
 describe('SmartList OData API', () => {
   describe('list', () => {
@@ -97,6 +97,66 @@ describe('SmartList OData API', () => {
         expect(item.priority).toBeDefined();
         expect(item.status).toBeDefined();
         console.log(`SmartList item: "${item.title}" (${item.priority}, ${item.status})`);
+      }
+    });
+
+    it('should expand related ProjectAssets with nested Projects and Assets', async () => {
+      const result = await db
+        .from(SmartList)
+        .list()
+        .where(eq(SmartList.status, 'Open'))
+        .top(5)
+        .expand(ProjectAssets, (paBuilder) =>
+          paBuilder
+            .select({
+              id: ProjectAssets.id,
+              project_id: ProjectAssets.project_id,
+              asset_id: ProjectAssets.asset_id,
+            })
+            .expand(Projects, (pBuilder) =>
+              pBuilder.select({
+                name: Projects.name,
+                region: Projects.region,
+                status: Projects.status,
+              })
+            )
+            .expand(Assets, (aBuilder) =>
+              aBuilder.select({
+                name: Assets.name,
+                type: Assets.type,
+              })
+            )
+        )
+        .execute();
+
+      expect(result.error).toBeUndefined();
+      expect(result.data).toBeDefined();
+
+      if (result.data && result.data.length > 0) {
+        const item = result.data[0];
+        console.log(`SmartList item: "${item.title}"`);
+        
+        // Check if ProjectAssets relation was expanded
+        if ('ProjectAssets' in item && item.ProjectAssets) {
+          const pa = item.ProjectAssets as { 
+            id?: string; 
+            Projects?: { name?: string }; 
+            Assets?: { name?: string } 
+          };
+          console.log(`  → ProjectAsset ID: ${pa.id}`);
+          
+          // Check nested Projects
+          if (pa.Projects?.name) {
+            console.log(`  → Project: ${pa.Projects.name}`);
+          }
+          
+          // Check nested Assets
+          if (pa.Assets?.name) {
+            console.log(`  → Asset: ${pa.Assets.name}`);
+          }
+        } else {
+          console.log('  → No ProjectAssets relation found (may not be linked)');
+        }
       }
     });
   });

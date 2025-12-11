@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { db, SmartList } from "../db";
+import { db, SmartList, ProjectAssets, Projects, Assets } from "../db";
 
 // Input schemas
 const listSmartListInput = z.object({
@@ -12,6 +12,7 @@ const listSmartListInput = z.object({
   milestone_target: z.string().optional(),
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
+  includeRelated: z.boolean().default(false), // Option to include project/asset info
 });
 
 const getSmartListByIdInput = z.object({
@@ -27,7 +28,7 @@ export const smartListRouter = {
   list: protectedProcedure
     .input(listSmartListInput)
     .handler(async ({ input }) => {
-      const { project_asset_id, priority, status, system_group, milestone_target, limit, offset } = input;
+      const { project_asset_id, priority, status, system_group, milestone_target, limit, offset, includeRelated } = input;
 
       const filters = [];
       if (project_asset_id) filters.push(eq(SmartList.project_asset_id, project_asset_id));
@@ -40,6 +41,31 @@ export const smartListRouter = {
       
       if (filters.length > 0) {
         query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
+      }
+
+      // Expand to include related ProjectAssets with nested Projects and Assets
+      if (includeRelated) {
+        query = query.expand(ProjectAssets, (paBuilder) =>
+          paBuilder
+            .select({
+              id: ProjectAssets.id,
+              project_id: ProjectAssets.project_id,
+              asset_id: ProjectAssets.asset_id,
+            })
+            .expand(Projects, (pBuilder) =>
+              pBuilder.select({
+                name: Projects.name,
+                region: Projects.region,
+                status: Projects.status,
+              })
+            )
+            .expand(Assets, (aBuilder) =>
+              aBuilder.select({
+                name: Assets.name,
+                type: Assets.type,
+              })
+            )
+        );
       }
 
       const result = await query.execute();
@@ -57,10 +83,28 @@ export const smartListRouter = {
   getById: protectedProcedure
     .input(getSmartListByIdInput)
     .handler(async ({ input }) => {
+      // Get with related data for detail view
       const result = await db
         .from(SmartList)
         .list()
         .where(eq(SmartList.id, input.id))
+        .expand(ProjectAssets, (paBuilder) =>
+          paBuilder
+            .expand(Projects, (pBuilder) =>
+              pBuilder.select({
+                name: Projects.name,
+                region: Projects.region,
+                status: Projects.status,
+              })
+            )
+            .expand(Assets, (aBuilder) =>
+              aBuilder.select({
+                name: Assets.name,
+                type: Assets.type,
+                location: Assets.location,
+              })
+            )
+        )
         .single()
         .execute();
 

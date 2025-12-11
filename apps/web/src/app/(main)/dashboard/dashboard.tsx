@@ -3,13 +3,28 @@ import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// SmartList item shape from API
+// SmartList item shape from API (with expanded related data)
 interface SmartListItem {
 	id: string;
 	title: string;
 	priority: string;
 	status: string;
 	system_group: string | null;
+	due_date: string | null;
+	ProjectAssets?: {
+		id: string;
+		project_id: string;
+		asset_id: string;
+		Projects?: {
+			name: string;
+			region: string;
+			status: string;
+		};
+		Assets?: {
+			name: string;
+			type: string;
+		};
+	};
 }
 
 export function DashboardStats() {
@@ -79,6 +94,7 @@ export function RecentActivity() {
 			input: {
 				limit: 5,
 				status: "Open",
+				includeRelated: true, // Include project/asset info
 			},
 		})
 	);
@@ -90,17 +106,17 @@ export function RecentActivity() {
 					<div key={i} className="flex items-center gap-4">
 						<Skeleton className="h-2 w-2 rounded-full" />
 						<div className="flex-1">
-							<Skeleton className="h-4 w-32 mb-1" />
-							<Skeleton className="h-3 w-24" />
+							<Skeleton className="h-4 w-48 mb-1" />
+							<Skeleton className="h-3 w-32" />
 						</div>
-						<Skeleton className="h-3 w-12" />
+						<Skeleton className="h-5 w-16" />
 					</div>
 				))}
 			</div>
 		);
 	}
 
-	const items = (actionItems.data?.data ?? []) as SmartListItem[];
+	const items = actionItems.data?.data ?? []
 
 	if (items.length === 0) {
 		return (
@@ -110,36 +126,45 @@ export function RecentActivity() {
 
 	return (
 		<div className="space-y-4">
-			{items.map((item) => (
-				<div key={item.id} className="flex items-center gap-4">
-					<div
-						className={`h-2 w-2 rounded-full ${
-							item.priority === "High"
-								? "bg-destructive"
-								: item.priority === "Medium"
-									? "bg-yellow-500"
-									: "bg-primary"
-						}`}
-					/>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium truncate">{item.title}</p>
-						<p className="text-xs text-muted-foreground truncate">
-							{item.system_group || "General"}
-						</p>
+			{items.map((item) => {
+				// Extract related project/asset names
+				const projectName = item.ProjectAssets?.Projects?.name;
+				const assetName = item.ProjectAssets?.Assets?.name;
+				const contextInfo = projectName || assetName 
+					? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
+					: item.system_group || "General";
+
+				return (
+					<div key={item.id} className="flex items-center gap-4">
+						<div
+							className={`h-2 w-2 rounded-full flex-shrink-0 ${
+								item.priority === "High"
+									? "bg-destructive"
+									: item.priority === "Medium"
+										? "bg-yellow-500"
+										: "bg-primary"
+							}`}
+						/>
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium truncate">{item.title}</p>
+							<p className="text-xs text-muted-foreground truncate">
+								{contextInfo}
+							</p>
+						</div>
+						<span
+							className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+								item.priority === "High"
+									? "bg-destructive/10 text-destructive"
+									: item.priority === "Medium"
+										? "bg-yellow-500/10 text-yellow-600"
+										: "bg-primary/10 text-primary"
+							}`}
+						>
+							{item.priority}
+						</span>
 					</div>
-					<span
-						className={`text-xs px-2 py-1 rounded-full ${
-							item.priority === "High"
-								? "bg-destructive/10 text-destructive"
-								: item.priority === "Medium"
-									? "bg-yellow-500/10 text-yellow-600"
-									: "bg-primary/10 text-primary"
-						}`}
-					>
-						{item.priority}
-					</span>
-				</div>
-			))}
+				);
+			})}
 		</div>
 	);
 }
