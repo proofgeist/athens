@@ -102,60 +102,43 @@ export const smartListRouter = {
           }
         }
 
-        // Step 3: Batch fetch Projects and Assets in a single request
-        const queries = [];
-        
-        // Build project queries (without .single() - batch may not support it)
-        for (const projectId of projectIds) {
-          queries.push(
-            db.from(Projects)
-              .list()
-              .where(eq(Projects.id, projectId))
-              .select({ id: Projects.id, name: Projects.name, region: Projects.region })
-              .top(1)
-          );
-        }
+        // Step 3: Use Promise.all instead of batch (batch is broken in fmodata alpha)
+        // Fetch ProjectAssets by project_id with expanded Projects and Assets
+        // Execute queries in parallel using Promise.all (workaround for broken batch)
+        const queryPromises = [...projectIds].map(async (projectId) => {
+          const result = await db.from(ProjectAssets)
+            .list()
+            .where(eq(ProjectAssets.project_id, projectId))
+            .expand(Projects, p => p.select({ name: Projects.name, region: Projects.region }))
+            .expand(Assets, a => a.select({ name: Assets.name, type: Assets.type }))
+            .top(1)
+            .execute();
+          
+          return { projectId, result };
+        });
 
-        // Build asset queries (without .single() - batch may not support it)
-        for (const assetId of assetIds) {
-          queries.push(
-            db.from(Assets)
-              .list()
-              .where(eq(Assets.id, assetId))
-              .select({ id: Assets.id, name: Assets.name, type: Assets.type })
-              .top(1)
-          );
-        }
+        const queryResults = await Promise.all(queryPromises);
 
-        // Execute all queries in a single batch request
-        const batchResult = queries.length > 0 ? await db.batch(queries).execute() : null;
-
-        // Step 4: Build lookup maps from batch results
+        // Step 4: Build lookup maps from Promise.all results
+        // Each result contains ProjectAsset with expanded Projects and Assets
         const projectsMap = new Map<string, { name: string | null; region: string | null }>();
         const assetsMap = new Map<string, { name: string | null; type: string | null }>();
 
-        if (batchResult) {
-          const numProjects = projectIds.size;
-          
-          // First N results are projects (each result is an array, take first item)
-          for (let i = 0; i < numProjects; i++) {
-            const itemResult = batchResult.results[i];
-            if (itemResult?.data && Array.isArray(itemResult.data) && itemResult.data.length > 0) {
-              const project = itemResult.data[0] as any;
-              if (project.id) {
-                projectsMap.set(project.id, { name: project.name, region: project.region });
-              }
+        for (const { projectId, result } of queryResults) {
+          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+            const pa = result.data[0] as any;
+            const assetId = pa.asset_id;
+            
+            // Extract expanded Projects data
+            if (pa.Projects && Array.isArray(pa.Projects) && pa.Projects.length > 0) {
+              const project = pa.Projects[0];
+              projectsMap.set(projectId, { name: project.name, region: project.region });
             }
-          }
-
-          // Remaining results are assets (each result is an array, take first item)
-          for (let i = numProjects; i < batchResult.results.length; i++) {
-            const itemResult = batchResult.results[i];
-            if (itemResult?.data && Array.isArray(itemResult.data) && itemResult.data.length > 0) {
-              const asset = itemResult.data[0] as any;
-              if (asset.id) {
-                assetsMap.set(asset.id, { name: asset.name, type: asset.type });
-              }
+            
+            // Extract expanded Assets data
+            if (pa.Assets && Array.isArray(pa.Assets) && pa.Assets.length > 0) {
+              const asset = pa.Assets[0];
+              assetsMap.set(assetId, { name: asset.name, type: asset.type });
             }
           }
         }
