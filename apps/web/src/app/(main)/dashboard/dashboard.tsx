@@ -2,6 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
@@ -68,17 +70,20 @@ export function RecentActivity() {
 	const actionItems = useQuery(
 		orpc.smartList.list.queryOptions({
 			input: {
-				limit: 5,
+				limit: 3,
 				status: "Open",
 				includeRelated: true, // Include project/asset info
 			},
 		})
 	);
 
+	const actionStats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
+	const totalOpenItems = actionStats.data?.byStatus.Open ?? 0;
+
 	if (actionItems.isLoading) {
 		return (
 			<div className="space-y-4">
-				{[1, 2, 3, 4, 5].map((i) => (
+				{[1, 2, 3].map((i) => (
 					<div key={i} className="flex items-center gap-4">
 						<Skeleton className="h-2 w-2 rounded-full" />
 						<div className="flex-1">
@@ -88,6 +93,7 @@ export function RecentActivity() {
 						<Skeleton className="h-5 w-16" />
 					</div>
 				))}
+				<Skeleton className="h-9 w-full mt-4" />
 			</div>
 		);
 	}
@@ -141,6 +147,17 @@ export function RecentActivity() {
 					</div>
 				);
 			})}
+			{totalOpenItems > 3 && (
+				<Button
+					variant="outline"
+					className="w-full mt-4"
+					asChild
+				>
+					<Link href={"/action-items" as any}>
+						Show all ({totalOpenItems})
+					</Link>
+				</Button>
+			)}
 		</div>
 	);
 }
