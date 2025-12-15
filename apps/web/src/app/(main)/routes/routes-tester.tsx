@@ -285,50 +285,48 @@ function ProcedureInputForm({
 						);
 					}
 
-					// Special handling for enum inputs
-					if (input === "priority") {
-						return (
-							<div key={input} className="space-y-2">
-								<Label>
-									{input}
-									{isRequired && <span className="text-destructive ml-1">*</span>}
-								</Label>
-								<Select onValueChange={(value) => setValue(input, value)}>
-									<SelectTrigger>
-										<SelectValue placeholder="Select priority..." />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="">None</SelectItem>
-										<SelectItem value="High">High</SelectItem>
-										<SelectItem value="Medium">Medium</SelectItem>
-										<SelectItem value="Low">Low</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						);
-					}
+			// Special handling for enum inputs
+			if (input === "priority") {
+				return (
+					<div key={input} className="space-y-2">
+						<Label>
+							{input}
+							{isRequired && <span className="text-destructive ml-1">*</span>}
+						</Label>
+						<Select onValueChange={(value) => setValue(input, value || undefined)}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select priority (optional)..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="High">High</SelectItem>
+								<SelectItem value="Medium">Medium</SelectItem>
+								<SelectItem value="Low">Low</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+				);
+			}
 
-					if (input === "status" && inputs.includes("priority")) {
-						return (
-							<div key={input} className="space-y-2">
-								<Label>
-									{input}
-									{isRequired && <span className="text-destructive ml-1">*</span>}
-								</Label>
-								<Select onValueChange={(value) => setValue(input, value)}>
-									<SelectTrigger>
-										<SelectValue placeholder="Select status..." />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="">None</SelectItem>
-										<SelectItem value="Open">Open</SelectItem>
-										<SelectItem value="Closed">Closed</SelectItem>
-										<SelectItem value="Deferred">Deferred</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						);
-					}
+			if (input === "status" && inputs.includes("priority")) {
+				return (
+					<div key={input} className="space-y-2">
+						<Label>
+							{input}
+							{isRequired && <span className="text-destructive ml-1">*</span>}
+						</Label>
+						<Select onValueChange={(value) => setValue(input, value || undefined)}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select status (optional)..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="Open">Open</SelectItem>
+								<SelectItem value="Closed">Closed</SelectItem>
+								<SelectItem value="Deferred">Deferred</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+				);
+			}
 
 					// Regular text/number inputs
 					return (

@@ -8,6 +8,7 @@ import {
 	BarChart3,
 	Settings,
 	HelpCircle,
+	Code2,
 	type LucideIcon,
 } from "lucide-react";
 
@@ -70,6 +71,11 @@ const navItems: NavItem[] = [
 			{ title: "Action Items", url: "/reports/action-items" },
 			{ title: "Progress", url: "/reports/progress" },
 		],
+	},
+	{
+		title: "API Routes",
+		url: "/routes" as "/",
+		icon: Code2,
 	},
 	{
 		title: "Settings",
