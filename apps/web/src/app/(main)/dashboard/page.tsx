@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 				{/* Main content area */}
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
 					<div className="col-span-4 rounded-xl border bg-card flex flex-col">
-						<div className="p-6">
+						<div className="p-6 pb-2">
 							<h3 className="font-semibold">Open Action Items</h3>
 							<p className="text-sm text-muted-foreground">
 								Items requiring your attention

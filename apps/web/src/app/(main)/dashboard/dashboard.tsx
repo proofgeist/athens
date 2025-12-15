@@ -12,13 +12,31 @@ import {
 	DropdownMenuCheckboxItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BarChart, Bar, XAxis } from "recharts";
+import { BarChart, Bar, XAxis, LabelList } from "recharts";
 import {
 	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
 	type ChartConfig,
 } from "@/components/ui/chart";
+
+// Custom label formatter that only shows non-zero values
+const CustomLabel = (props: any) => {
+	const { value, x, y, width } = props;
+	if (value === 0 || value === undefined || value === null) {
+		return null;
+	}
+	return (
+		<text
+			x={x + width / 2}
+			y={y - 5}
+			fill="hsl(var(--muted-foreground))"
+			fontSize={12}
+			fontWeight={500}
+			textAnchor="middle"
+		>
+			{value}
+		</text>
+	);
+};
 
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
@@ -122,8 +140,8 @@ export function RecentActivity() {
 	}
 
 	return (
-		<div className="space-y-6 flex-1 flex flex-col">
-			<div className="flex-1 space-y-6">
+		<div className="space-y-2 flex-1 flex flex-col">
+			<div className="flex-1 space-y-2">
 				{items.map((item) => {
 					// Extract enriched project/asset names (typed from API output schema)
 					const projectName = item.projectName;
@@ -190,7 +208,7 @@ const chartConfig = {
 	},
 	highOpen: {
 		label: "High - Open",
-		color: "hsl(var(--destructive))",
+		color: "hsl(0, 84%, 60%)", // Direct red color
 	},
 	lowClosed: {
 		label: "Low - Closed",
@@ -267,28 +285,37 @@ export function ActionItemsSummary({
 			priority: "Low",
 			lowOpen: data.byPriorityAndStatus.Low.Open,
 			lowClosed: showClosed ? data.byPriorityAndStatus.Low.Closed : 0,
+			lowTotal: data.byPriorityAndStatus.Low.Open + (showClosed ? data.byPriorityAndStatus.Low.Closed : 0),
 			mediumOpen: 0,
 			mediumClosed: 0,
+			mediumTotal: 0,
 			highOpen: 0,
 			highClosed: 0,
+			highTotal: 0,
 		},
 		{
 			priority: "Medium",
 			lowOpen: 0,
 			lowClosed: 0,
+			lowTotal: 0,
 			mediumOpen: data.byPriorityAndStatus.Medium.Open,
 			mediumClosed: showClosed ? data.byPriorityAndStatus.Medium.Closed : 0,
+			mediumTotal: data.byPriorityAndStatus.Medium.Open + (showClosed ? data.byPriorityAndStatus.Medium.Closed : 0),
 			highOpen: 0,
 			highClosed: 0,
+			highTotal: 0,
 		},
 		{
 			priority: "High",
 			lowOpen: 0,
 			lowClosed: 0,
+			lowTotal: 0,
 			mediumOpen: 0,
 			mediumClosed: 0,
+			mediumTotal: 0,
 			highOpen: data.byPriorityAndStatus.High.Open,
 			highClosed: showClosed ? data.byPriorityAndStatus.High.Closed : 0,
+			highTotal: data.byPriorityAndStatus.High.Open + (showClosed ? data.byPriorityAndStatus.High.Closed : 0),
 		},
 	];
 
@@ -318,14 +345,18 @@ export function ActionItemsSummary({
 						stackId="a"
 						fill="var(--color-lowOpen)"
 						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
-					/>
+					>
+						{!showClosed && <LabelList dataKey="lowTotal" content={<CustomLabel />} />}
+					</Bar>
 					{showClosed && (
 						<Bar
 							dataKey="lowClosed"
 							stackId="a"
 							fill="var(--color-lowClosed)"
 							radius={[4, 4, 0, 0]}
-						/>
+						>
+							<LabelList dataKey="lowTotal" content={<CustomLabel />} />
+						</Bar>
 					)}
 					{/* Medium priority - Yellow/Orange */}
 					<Bar
@@ -333,34 +364,38 @@ export function ActionItemsSummary({
 						stackId="a"
 						fill="var(--color-mediumOpen)"
 						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
-					/>
+					>
+						{!showClosed && <LabelList dataKey="mediumTotal" content={<CustomLabel />} />}
+					</Bar>
 					{showClosed && (
 						<Bar
 							dataKey="mediumClosed"
 							stackId="a"
 							fill="var(--color-mediumClosed)"
 							radius={[4, 4, 0, 0]}
-						/>
+						>
+							<LabelList dataKey="mediumTotal" content={<CustomLabel />} />
+						</Bar>
 					)}
 					{/* High priority - Red */}
 					<Bar
 						dataKey="highOpen"
 						stackId="a"
-						fill="var(--color-highOpen)"
+						fill="hsl(0, 84%, 60%)"
 						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
-					/>
+					>
+						{!showClosed && <LabelList dataKey="highTotal" content={<CustomLabel />} />}
+					</Bar>
 					{showClosed && (
 						<Bar
 							dataKey="highClosed"
 							stackId="a"
 							fill="var(--color-highClosed)"
 							radius={[4, 4, 0, 0]}
-						/>
+						>
+							<LabelList dataKey="highTotal" content={<CustomLabel />} />
+						</Bar>
 					)}
-					<ChartTooltip
-						content={<ChartTooltipContent />}
-						cursor={false}
-					/>
 				</BarChart>
 			</ChartContainer>
 		</div>
