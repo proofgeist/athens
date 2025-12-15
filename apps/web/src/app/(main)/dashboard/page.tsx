@@ -26,8 +26,9 @@ export default async function DashboardPage() {
 		queryClient.prefetchQuery(
 			orpc.smartList.list.queryOptions({
 				input: {
-					limit: 5,
+					limit: 3,
 					status: "Open",
+					includeRelated: true,
 				},
 			})
 		),
@@ -51,25 +52,25 @@ export default async function DashboardPage() {
 
 				{/* Main content area */}
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-					<div className="col-span-4 rounded-xl border bg-card">
+					<div className="col-span-4 rounded-xl border bg-card flex flex-col">
 						<div className="p-6">
 							<h3 className="font-semibold">Open Action Items</h3>
 							<p className="text-sm text-muted-foreground">
 								Items requiring your attention
 							</p>
 						</div>
-						<div className="p-6 pt-0">
+						<div className="p-6 pt-0 flex-1 flex flex-col">
 							<RecentActivity />
 						</div>
 					</div>
-					<div className="col-span-3 rounded-xl border bg-card">
+					<div className="col-span-3 rounded-xl border bg-card flex flex-col">
 						<div className="p-6">
 							<h3 className="font-semibold">Action Items Summary</h3>
 							<p className="text-sm text-muted-foreground">
 								Breakdown by priority
 							</p>
 						</div>
-						<div className="p-6 pt-0">
+						<div className="p-6 pt-0 flex-1">
 							<ActionItemsSummary />
 						</div>
 					</div>

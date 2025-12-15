@@ -4,6 +4,16 @@ import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import {
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	CartesianGrid,
+	Tooltip,
+	Legend,
+	ResponsiveContainer,
+} from "recharts";
 
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
@@ -107,8 +117,9 @@ export function RecentActivity() {
 	}
 
 	return (
-		<div className="space-y-4">
-			{items.map((item) => {
+		<div className="space-y-4 flex-1 flex flex-col">
+			<div className="flex-1">
+				{items.map((item) => {
 				// Extract enriched project/asset names (typed from API output schema)
 				const projectName = item.projectName;
 				const assetName = item.assetName;
@@ -146,7 +157,8 @@ export function RecentActivity() {
 						</span>
 					</div>
 				);
-			})}
+				})}
+			</div>
 			{totalOpenItems > 3 && (
 				<Button
 					variant="outline"
@@ -167,13 +179,8 @@ export function ActionItemsSummary() {
 
 	if (stats.isLoading) {
 		return (
-			<div className="space-y-3">
-				{[1, 2, 3].map((i) => (
-					<div key={i} className="flex justify-between">
-						<Skeleton className="h-4 w-20" />
-						<Skeleton className="h-4 w-12" />
-					</div>
-				))}
+			<div className="h-[300px] flex items-center justify-center">
+				<Skeleton className="h-full w-full" />
 			</div>
 		);
 	}
@@ -181,47 +188,69 @@ export function ActionItemsSummary() {
 	const data = stats.data;
 	if (!data) return null;
 
+	// Transform data for chart
+	const chartData = [
+		{
+			priority: "Low",
+			open: data.byPriorityAndStatus.Low.Open,
+			closed: data.byPriorityAndStatus.Low.Closed,
+		},
+		{
+			priority: "Medium",
+			open: data.byPriorityAndStatus.Medium.Open,
+			closed: data.byPriorityAndStatus.Medium.Closed,
+		},
+		{
+			priority: "High",
+			open: data.byPriorityAndStatus.High.Open,
+			closed: data.byPriorityAndStatus.High.Closed,
+		},
+	];
+
 	return (
-		<div className="space-y-3">
-			<div className="flex justify-between items-center">
-				<span className="text-sm">High Priority</span>
-				<div className="flex gap-2">
-					<span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive">
-						{data.byPriorityAndStatus.High.Open} open
-					</span>
-					<span className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-600">
-						{data.byPriorityAndStatus.High.Closed} closed
-					</span>
-				</div>
-			</div>
-			<div className="flex justify-between items-center">
-				<span className="text-sm">Medium Priority</span>
-				<div className="flex gap-2">
-					<span className="text-xs px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-600">
-						{data.byPriorityAndStatus.Medium.Open} open
-					</span>
-					<span className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-600">
-						{data.byPriorityAndStatus.Medium.Closed} closed
-					</span>
-				</div>
-			</div>
-			<div className="flex justify-between items-center">
-				<span className="text-sm">Low Priority</span>
-				<div className="flex gap-2">
-					<span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">
-						{data.byPriorityAndStatus.Low.Open} open
-					</span>
-					<span className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-600">
-						{data.byPriorityAndStatus.Low.Closed} closed
-					</span>
-				</div>
-			</div>
-			<div className="pt-2 border-t mt-3">
-				<div className="flex justify-between items-center font-medium">
-					<span className="text-sm">Total</span>
-					<span className="text-sm">{data.total} items</span>
-				</div>
-			</div>
+		<div className="h-[300px] w-full">
+			<ResponsiveContainer width="100%" height="100%">
+				<BarChart
+					data={chartData}
+					margin={{
+						top: 20,
+						right: 30,
+						left: 20,
+						bottom: 5,
+					}}
+				>
+					<CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+					<XAxis
+						dataKey="priority"
+						className="text-xs"
+						tick={{ fill: "hsl(var(--muted-foreground))" }}
+					/>
+					<YAxis
+						className="text-xs"
+						tick={{ fill: "hsl(var(--muted-foreground))" }}
+					/>
+					<Tooltip
+						contentStyle={{
+							backgroundColor: "hsl(var(--card))",
+							border: "1px solid hsl(var(--border))",
+							borderRadius: "8px",
+						}}
+					/>
+					<Legend />
+					<Bar
+						dataKey="open"
+						fill="hsl(var(--destructive))"
+						name="Open"
+						radius={[4, 4, 0, 0]}
+					/>
+					<Bar
+						dataKey="closed"
+						fill="hsl(142, 71%, 45%)"
+						name="Closed"
+						radius={[4, 4, 0, 0]}
+					/>
+				</BarChart>
+			</ResponsiveContainer>
 		</div>
 	);
 }
