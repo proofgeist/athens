@@ -71,74 +71,40 @@ export const smartListRouter = {
         baseQuery = baseQuery.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
 
-      // Execute with or without related data
+      // Execute with or without expand based on includeRelated
+      // SmartList → ProjectAssets → Projects/Assets (nested expands)
       if (includeRelated) {
-        // Step 1: Get SmartList items
-        const smartListResult = await baseQuery.execute();
+        const result = await baseQuery
+          .expand(ProjectAssets, (paBuilder) =>
+            paBuilder
+              .select({
+                id: ProjectAssets.id,
+                project_id: ProjectAssets.project_id,
+                asset_id: ProjectAssets.asset_id,
+              })
+              .expand(Projects, (pBuilder) =>
+                pBuilder.select({
+                  name: Projects.name,
+                  region: Projects.region,
+                  status: Projects.status,
+                })
+              )
+              .expand(Assets, (aBuilder) =>
+                aBuilder.select({
+                  name: Assets.name,
+                  type: Assets.type,
+                })
+              )
+          )
+          .execute();
 
-        if (smartListResult.error || !smartListResult.data) {
+        if (result.error) {
           return { data: [], total: 0 };
         }
 
-        // Step 2: Collect unique project_asset_ids
-        const projectAssetIds = new Set<string>();
-        for (const item of smartListResult.data) {
-          if (item.project_asset_id) {
-            projectAssetIds.add(item.project_asset_id);
-          }
-        }
-
-        // Step 3: Fetch ProjectAssets with expanded Projects and Assets
-        // (This works because we query FROM ProjectAssets with direct relationships)
-        const projectAssetMap = new Map<string, { 
-          projectName: string | null; 
-          projectRegion: string | null; 
-          assetName: string | null; 
-          assetType: string | null; 
-        }>();
-
-        // Fetch in parallel
-        const paPromises = [...projectAssetIds].map(async (paId) => {
-          const result = await db
-            .from(ProjectAssets)
-            .list()
-            .where(eq(ProjectAssets.id, paId))
-            .expand(Projects, p => p.select({ name: Projects.name, region: Projects.region }))
-            .expand(Assets, a => a.select({ name: Assets.name, type: Assets.type }))
-            .single()
-            .execute();
-
-          if (result.data) {
-            const projectsArr = (result.data as any).Projects;
-            const assetsArr = (result.data as any).Assets;
-            projectAssetMap.set(paId, {
-              projectName: Array.isArray(projectsArr) && projectsArr[0]?.name || null,
-              projectRegion: Array.isArray(projectsArr) && projectsArr[0]?.region || null,
-              assetName: Array.isArray(assetsArr) && assetsArr[0]?.name || null,
-              assetType: Array.isArray(assetsArr) && assetsArr[0]?.type || null,
-            });
-          }
-        });
-
-        await Promise.all(paPromises);
-
-        // Step 4: Enrich SmartList items with project/asset info
-        const enrichedData = smartListResult.data.map((item) => {
-          const paId = item.project_asset_id;
-          const enrichment = paId ? projectAssetMap.get(paId) : null;
-
-          return {
-            ...item,
-            projectName: enrichment?.projectName ?? null,
-            projectRegion: enrichment?.projectRegion ?? null,
-            assetName: enrichment?.assetName ?? null,
-            assetType: enrichment?.assetType ?? null,
-          };
-        });
-
         return {
-          data: enrichedData,
-          total: enrichedData.length,
+          data: result.data ?? [],
+          total: result.data?.length ?? 0,
         };
       }
 
@@ -158,11 +124,26 @@ export const smartListRouter = {
   getById: protectedProcedure
     .input(getSmartListByIdInput)
     .handler(async ({ input }) => {
-      // Get SmartList item
       const result = await db
         .from(SmartList)
         .list()
         .where(eq(SmartList.id, input.id))
+        .expand(ProjectAssets, (paBuilder) =>
+          paBuilder
+            .expand(Projects, (pBuilder) =>
+              pBuilder.select({
+                name: Projects.name,
+                region: Projects.region,
+                status: Projects.status,
+              })
+            )
+            .expand(Assets, (aBuilder) =>
+              aBuilder.select({
+                name: Assets.name,
+                type: Assets.type,
+              })
+            )
+        )
         .single()
         .execute();
 
@@ -170,33 +151,7 @@ export const smartListRouter = {
         throw new Error(`SmartList item not found: ${input.id}`);
       }
 
-      // Fetch ProjectAssets with expanded Projects/Assets
-      let projectName: string | null = null;
-      let assetName: string | null = null;
-
-      if (result.data.project_asset_id) {
-        const paResult = await db
-          .from(ProjectAssets)
-          .list()
-          .where(eq(ProjectAssets.id, result.data.project_asset_id))
-          .expand(Projects, p => p.select({ name: Projects.name }))
-          .expand(Assets, a => a.select({ name: Assets.name }))
-          .single()
-          .execute();
-
-        if (paResult.data) {
-          const projectsArr = (paResult.data as any).Projects;
-          const assetsArr = (paResult.data as any).Assets;
-          projectName = Array.isArray(projectsArr) && projectsArr[0]?.name || null;
-          assetName = Array.isArray(assetsArr) && assetsArr[0]?.name || null;
-        }
-      }
-
-      return {
-        ...result.data,
-        projectName,
-        assetName,
-      };
+      return result.data;
     }),
 
   getStatusSummary: protectedProcedure
