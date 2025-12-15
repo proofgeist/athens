@@ -63,7 +63,7 @@ export default async function DashboardPage() {
 							<RecentActivity />
 						</div>
 					</div>
-					<div className="col-span-3 rounded-xl border bg-card flex flex-col">
+					<div className="col-span-3 rounded-xl border bg-card flex flex-col overflow-hidden">
 						<ActionItemsSummaryWrapper />
 					</div>
 				</div>

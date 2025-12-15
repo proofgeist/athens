@@ -265,16 +265,16 @@ export function ActionItemsSummary({
 	];
 
 	return (
-		<div className="h-[150px] w-full">
-			<ChartContainer config={chartConfig}>
+		<div className="h-[150px] w-full overflow-hidden max-w-full">
+			<ChartContainer config={chartConfig} className="!h-[150px] w-full max-w-full">
 				<BarChart
 					accessibilityLayer
 					data={chartData}
 					margin={{
-						top: 10,
-						right: 20,
+						top: 5,
+						right: 5,
 						left: 0,
-						bottom: 5,
+						bottom: 0,
 					}}
 				>
 					<XAxis

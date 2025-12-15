@@ -17,7 +17,7 @@ export function ActionItemsSummaryWrapper() {
 					setShowClosed={setShowClosed}
 				/>
 			</div>
-			<div className="p-6 pt-0 flex-1">
+			<div className="p-6 pt-0 flex-1 overflow-hidden">
 				<ActionItemsSummary
 					showClosed={showClosed}
 					setShowClosed={setShowClosed}
