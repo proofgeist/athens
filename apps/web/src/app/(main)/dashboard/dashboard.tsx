@@ -122,46 +122,46 @@ export function RecentActivity() {
 	}
 
 	return (
-		<div className="space-y-4 flex-1 flex flex-col">
-			<div className="flex-1">
+		<div className="space-y-6 flex-1 flex flex-col">
+			<div className="flex-1 space-y-6">
 				{items.map((item) => {
-				// Extract enriched project/asset names (typed from API output schema)
-				const projectName = item.projectName;
-				const assetName = item.assetName;
-				const contextInfo = projectName || assetName 
-					? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
-					: item.system_group || "General";
+					// Extract enriched project/asset names (typed from API output schema)
+					const projectName = item.projectName;
+					const assetName = item.assetName;
+					const contextInfo = projectName || assetName 
+						? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
+						: item.system_group || "General";
 
-				return (
-					<div key={item.id} className="flex items-center gap-4">
-						<div
-							className={`h-2 w-2 rounded-full flex-shrink-0 ${
-								item.priority === "High"
-									? "bg-destructive"
-									: item.priority === "Medium"
-										? "bg-yellow-500"
-										: "bg-primary"
-							}`}
-						/>
-						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium truncate">{item.title}</p>
-							<p className="text-xs text-muted-foreground truncate">
-								{contextInfo}
-							</p>
+					return (
+						<div key={item.id} className="flex items-center gap-4">
+							<div
+								className={`h-2 w-2 rounded-full flex-shrink-0 ${
+									item.priority === "High"
+										? "bg-destructive"
+										: item.priority === "Medium"
+											? "bg-yellow-500"
+											: "bg-primary"
+								}`}
+							/>
+							<div className="flex-1 min-w-0">
+								<p className="text-sm font-medium truncate">{item.title}</p>
+								<p className="text-xs text-muted-foreground truncate">
+									{contextInfo}
+								</p>
+							</div>
+							<span
+								className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+									item.priority === "High"
+										? "bg-destructive/10 text-destructive"
+										: item.priority === "Medium"
+											? "bg-yellow-500/10 text-yellow-600"
+											: "bg-primary/10 text-primary"
+								}`}
+							>
+								{item.priority}
+							</span>
 						</div>
-						<span
-							className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
-								item.priority === "High"
-									? "bg-destructive/10 text-destructive"
-									: item.priority === "Medium"
-										? "bg-yellow-500/10 text-yellow-600"
-										: "bg-primary/10 text-primary"
-							}`}
-						>
-							{item.priority}
-						</span>
-					</div>
-				);
+					);
 				})}
 			</div>
 			{totalOpenItems > 3 && (
@@ -180,12 +180,28 @@ export function RecentActivity() {
 }
 
 const chartConfig = {
-	open: {
-		label: "Open",
+	lowOpen: {
+		label: "Low - Open",
+		color: "hsl(var(--primary))",
+	},
+	mediumOpen: {
+		label: "Medium - Open",
+		color: "hsl(38, 92%, 50%)", // Yellow/orange
+	},
+	highOpen: {
+		label: "High - Open",
 		color: "hsl(var(--destructive))",
 	},
-	closed: {
-		label: "Closed",
+	lowClosed: {
+		label: "Low - Closed",
+		color: "hsl(142, 71%, 45%)",
+	},
+	mediumClosed: {
+		label: "Medium - Closed",
+		color: "hsl(142, 71%, 45%)",
+	},
+	highClosed: {
+		label: "High - Closed",
 		color: "hsl(142, 71%, 45%)",
 	},
 } satisfies ChartConfig;
@@ -245,22 +261,34 @@ export function ActionItemsSummary({
 	const data = stats.data;
 	if (!data) return null;
 
-	// Transform data for chart
+	// Transform data for chart - separate keys for each priority
 	const chartData = [
 		{
 			priority: "Low",
-			open: data.byPriorityAndStatus.Low.Open,
-			closed: showClosed ? data.byPriorityAndStatus.Low.Closed : 0,
+			lowOpen: data.byPriorityAndStatus.Low.Open,
+			lowClosed: showClosed ? data.byPriorityAndStatus.Low.Closed : 0,
+			mediumOpen: 0,
+			mediumClosed: 0,
+			highOpen: 0,
+			highClosed: 0,
 		},
 		{
 			priority: "Medium",
-			open: data.byPriorityAndStatus.Medium.Open,
-			closed: showClosed ? data.byPriorityAndStatus.Medium.Closed : 0,
+			lowOpen: 0,
+			lowClosed: 0,
+			mediumOpen: data.byPriorityAndStatus.Medium.Open,
+			mediumClosed: showClosed ? data.byPriorityAndStatus.Medium.Closed : 0,
+			highOpen: 0,
+			highClosed: 0,
 		},
 		{
 			priority: "High",
-			open: data.byPriorityAndStatus.High.Open,
-			closed: showClosed ? data.byPriorityAndStatus.High.Closed : 0,
+			lowOpen: 0,
+			lowClosed: 0,
+			mediumOpen: 0,
+			mediumClosed: 0,
+			highOpen: data.byPriorityAndStatus.High.Open,
+			highClosed: showClosed ? data.byPriorityAndStatus.High.Closed : 0,
 		},
 	];
 
@@ -284,17 +312,48 @@ export function ActionItemsSummary({
 						axisLine={false}
 						tick={{ fill: "hsl(var(--muted-foreground))" }}
 					/>
+					{/* Low priority - Blue */}
 					<Bar
-						dataKey="open"
+						dataKey="lowOpen"
 						stackId="a"
-						fill="var(--color-open)"
+						fill="var(--color-lowOpen)"
 						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
 					/>
 					{showClosed && (
 						<Bar
-							dataKey="closed"
+							dataKey="lowClosed"
 							stackId="a"
-							fill="var(--color-closed)"
+							fill="var(--color-lowClosed)"
+							radius={[4, 4, 0, 0]}
+						/>
+					)}
+					{/* Medium priority - Yellow/Orange */}
+					<Bar
+						dataKey="mediumOpen"
+						stackId="a"
+						fill="var(--color-mediumOpen)"
+						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
+					/>
+					{showClosed && (
+						<Bar
+							dataKey="mediumClosed"
+							stackId="a"
+							fill="var(--color-mediumClosed)"
+							radius={[4, 4, 0, 0]}
+						/>
+					)}
+					{/* High priority - Red */}
+					<Bar
+						dataKey="highOpen"
+						stackId="a"
+						fill="var(--color-highOpen)"
+						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
+					/>
+					{showClosed && (
+						<Bar
+							dataKey="highClosed"
+							stackId="a"
+							fill="var(--color-highClosed)"
 							radius={[4, 4, 0, 0]}
 						/>
 					)}
