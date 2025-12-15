@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -108,13 +108,13 @@ export function RoutesTester() {
 				}
 			}
 
-			// Execute the procedure
-			const router = orpc[selectedRouter as keyof typeof orpc] as any;
+			// Execute the procedure using the oRPC client
+			const router = client[selectedRouter as keyof typeof client] as any;
 			const procedure = router[selectedProcedure];
 
 			let response;
 			if (Object.keys(input).length > 0) {
-				response = await procedure({ input });
+				response = await procedure(input);
 			} else {
 				response = await procedure();
 			}
