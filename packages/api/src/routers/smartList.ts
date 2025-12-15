@@ -71,40 +71,129 @@ export const smartListRouter = {
         baseQuery = baseQuery.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
 
-      // Execute with or without expand based on includeRelated
-      // SmartList → ProjectAssets → Projects/Assets (nested expands)
+      // Execute with or without related data using batch operations
       if (includeRelated) {
-        const result = await baseQuery
+        // Step 1: Get SmartList items with ProjectAssets expanded (single-level expand works)
+        const smartListResult = await baseQuery
           .expand(ProjectAssets, (paBuilder) =>
-            paBuilder
-              .select({
-                id: ProjectAssets.id,
-                project_id: ProjectAssets.project_id,
-                asset_id: ProjectAssets.asset_id,
-              })
-              .expand(Projects, (pBuilder) =>
-                pBuilder.select({
-                  name: Projects.name,
-                  region: Projects.region,
-                  status: Projects.status,
-                })
-              )
-              .expand(Assets, (aBuilder) =>
-                aBuilder.select({
-                  name: Assets.name,
-                  type: Assets.type,
-                })
-              )
+            paBuilder.select({
+              id: ProjectAssets.id,
+              project_id: ProjectAssets.project_id,
+              asset_id: ProjectAssets.asset_id,
+            })
           )
           .execute();
 
-        if (result.error) {
+        if (smartListResult.error || !smartListResult.data) {
           return { data: [], total: 0 };
         }
 
+        // Step 2: Collect unique project_ids and asset_ids from ProjectAssets
+        const projectIds = new Set<string>();
+        const assetIds = new Set<string>();
+
+        for (const item of smartListResult.data) {
+          const paArray = item.ProjectAssets;
+          if (Array.isArray(paArray)) {
+            for (const pa of paArray) {
+              if (pa.project_id) projectIds.add(pa.project_id);
+              if (pa.asset_id) assetIds.add(pa.asset_id);
+            }
+          }
+        }
+
+        // Step 3: Batch fetch Projects and Assets in a single request
+        const queries = [];
+        
+        // Build project queries
+        for (const projectId of projectIds) {
+          queries.push(
+            db.from(Projects)
+              .list()
+              .where(eq(Projects.id, projectId))
+              .select({ id: Projects.id, name: Projects.name, region: Projects.region })
+              .single()
+          );
+        }
+
+        // Build asset queries
+        for (const assetId of assetIds) {
+          queries.push(
+            db.from(Assets)
+              .list()
+              .where(eq(Assets.id, assetId))
+              .select({ id: Assets.id, name: Assets.name, type: Assets.type })
+              .single()
+          );
+        }
+
+        // Execute all queries in a single batch request
+        const batchResult = queries.length > 0 ? await db.batch(queries).execute() : null;
+
+        // Step 4: Build lookup maps from batch results
+        const projectsMap = new Map<string, { name: string | null; region: string | null }>();
+        const assetsMap = new Map<string, { name: string | null; type: string | null }>();
+
+        if (batchResult) {
+          const numProjects = projectIds.size;
+          
+          // First N results are projects
+          for (let i = 0; i < numProjects; i++) {
+            const itemResult = batchResult.results[i];
+            if (itemResult?.data) {
+              const project = itemResult.data as any;
+              if (project.id) {
+                projectsMap.set(project.id, { name: project.name, region: project.region });
+              }
+            }
+          }
+
+          // Remaining results are assets
+          for (let i = numProjects; i < batchResult.results.length; i++) {
+            const itemResult = batchResult.results[i];
+            if (itemResult?.data) {
+              const asset = itemResult.data as any;
+              if (asset.id) {
+                assetsMap.set(asset.id, { name: asset.name, type: asset.type });
+              }
+            }
+          }
+        }
+
+        // Step 5: Enrich SmartList items with project/asset info
+        const enrichedData = smartListResult.data.map((item) => {
+          const paArray = (item as any).ProjectAssets;
+          let projectName: string | null = null;
+          let projectRegion: string | null = null;
+          let assetName: string | null = null;
+          let assetType: string | null = null;
+
+          if (Array.isArray(paArray) && paArray.length > 0) {
+            const pa = paArray[0];
+            if (pa.project_id && projectsMap.has(pa.project_id)) {
+              const project = projectsMap.get(pa.project_id)!;
+              projectName = project.name;
+              projectRegion = project.region;
+            }
+            if (pa.asset_id && assetsMap.has(pa.asset_id)) {
+              const asset = assetsMap.get(pa.asset_id)!;
+              assetName = asset.name;
+              assetType = asset.type;
+            }
+          }
+
+          return {
+            ...item,
+            projectName,
+            projectRegion,
+            assetName,
+            assetType,
+          };
+        });
+
         return {
-          data: result.data ?? [],
-          total: result.data?.length ?? 0,
+          data: enrichedData,
+          total: enrichedData.length,
         };
       }
 
