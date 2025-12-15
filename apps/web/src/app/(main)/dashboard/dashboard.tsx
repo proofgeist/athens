@@ -1,19 +1,19 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { BarChart, Bar, XAxis } from "recharts";
 import {
-	BarChart,
-	Bar,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	Legend,
-	ResponsiveContainer,
-} from "recharts";
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+	type ChartConfig,
+} from "@/components/ui/chart";
 
 export function DashboardStats() {
 	const projectStats = useQuery(orpc.projectAssets.getSummaryStats.queryOptions());
@@ -174,7 +174,19 @@ export function RecentActivity() {
 	);
 }
 
+const chartConfig = {
+	open: {
+		label: "Open",
+		color: "hsl(var(--destructive))",
+	},
+	closed: {
+		label: "Closed",
+		color: "hsl(142, 71%, 45%)",
+	},
+} satisfies ChartConfig;
+
 export function ActionItemsSummary() {
+	const [showClosed, setShowClosed] = useState(false);
 	const stats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
 
 	if (stats.isLoading) {
@@ -193,64 +205,75 @@ export function ActionItemsSummary() {
 		{
 			priority: "Low",
 			open: data.byPriorityAndStatus.Low.Open,
-			closed: data.byPriorityAndStatus.Low.Closed,
+			closed: showClosed ? data.byPriorityAndStatus.Low.Closed : 0,
 		},
 		{
 			priority: "Medium",
 			open: data.byPriorityAndStatus.Medium.Open,
-			closed: data.byPriorityAndStatus.Medium.Closed,
+			closed: showClosed ? data.byPriorityAndStatus.Medium.Closed : 0,
 		},
 		{
 			priority: "High",
 			open: data.byPriorityAndStatus.High.Open,
-			closed: data.byPriorityAndStatus.High.Closed,
+			closed: showClosed ? data.byPriorityAndStatus.High.Closed : 0,
 		},
 	];
 
 	return (
-		<div className="h-[300px] w-full">
-			<ResponsiveContainer width="100%" height="100%">
-				<BarChart
-					data={chartData}
-					margin={{
-						top: 20,
-						right: 30,
-						left: 20,
-						bottom: 5,
-					}}
+		<div className="space-y-4">
+			<div className="flex items-center space-x-2">
+				<Checkbox
+					id="show-closed"
+					checked={showClosed}
+					onCheckedChange={(checked) => setShowClosed(checked === true)}
+				/>
+				<Label
+					htmlFor="show-closed"
+					className="text-sm font-normal cursor-pointer"
 				>
-					<CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-					<XAxis
-						dataKey="priority"
-						className="text-xs"
-						tick={{ fill: "hsl(var(--muted-foreground))" }}
-					/>
-					<YAxis
-						className="text-xs"
-						tick={{ fill: "hsl(var(--muted-foreground))" }}
-					/>
-					<Tooltip
-						contentStyle={{
-							backgroundColor: "hsl(var(--card))",
-							border: "1px solid hsl(var(--border))",
-							borderRadius: "8px",
+					Show completed
+				</Label>
+			</div>
+			<div className="h-[300px] w-full">
+				<ChartContainer config={chartConfig}>
+					<BarChart
+						accessibilityLayer
+						data={chartData}
+						margin={{
+							top: 20,
+							right: 20,
+							left: 0,
+							bottom: 5,
 						}}
-					/>
-					<Legend />
-					<Bar
-						dataKey="open"
-						fill="hsl(var(--destructive))"
-						name="Open"
-						radius={[4, 4, 0, 0]}
-					/>
-					<Bar
-						dataKey="closed"
-						fill="hsl(142, 71%, 45%)"
-						name="Closed"
-						radius={[4, 4, 0, 0]}
-					/>
-				</BarChart>
-			</ResponsiveContainer>
+					>
+						<XAxis
+							dataKey="priority"
+							tickLine={false}
+							tickMargin={10}
+							axisLine={false}
+							tick={{ fill: "hsl(var(--muted-foreground))" }}
+						/>
+						<Bar
+							dataKey="open"
+							stackId="a"
+							fill="var(--color-open)"
+							radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
+						/>
+						{showClosed && (
+							<Bar
+								dataKey="closed"
+								stackId="a"
+								fill="var(--color-closed)"
+								radius={[4, 4, 0, 0]}
+							/>
+						)}
+						<ChartTooltip
+							content={<ChartTooltipContent />}
+							cursor={false}
+						/>
+					</BarChart>
+				</ChartContainer>
+			</div>
 		</div>
 	);
 }
