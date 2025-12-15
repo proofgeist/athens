@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eq, contains } from '@proofkit/fmodata';
+import { eq } from '@proofkit/fmodata';
 import { db, ProjectAssets } from '../db';
 
 describe('ProjectAssets OData API', () => {
@@ -54,7 +54,7 @@ describe('ProjectAssets OData API', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        const pa = result.data[0];
+        const pa = result.data[0]!;
         expect(pa.raptor_checklist_completion).toBeDefined();
         expect(pa.sit_completion).toBeDefined();
         expect(pa.doc_verification_completion).toBeDefined();

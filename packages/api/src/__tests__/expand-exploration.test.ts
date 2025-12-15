@@ -38,7 +38,7 @@ describe('OData Expand Exploration', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        const item = result.data[0];
+        const item = result.data[0]!;
         expect('ProjectAssets' in item).toBe(true);
         const pa = (item as any).ProjectAssets;
         expect(Array.isArray(pa)).toBe(true);
@@ -96,7 +96,7 @@ describe('OData Expand Exploration', () => {
       expect(result.data).toBeDefined();
 
       if (result.data && result.data.length > 0) {
-        const item = result.data[0];
+        const item = result.data[0]!;
         const hasProjects = 'Projects' in item && Array.isArray((item as any).Projects);
         const hasAssets = 'Assets' in item && Array.isArray((item as any).Assets);
         

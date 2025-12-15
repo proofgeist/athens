@@ -54,7 +54,7 @@ describe('IssuesSummary OData API', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        const summary = result.data[0];
+        const summary = result.data[0]!;
         expect(summary.open_high).toBeDefined();
         expect(summary.closed_high).toBeDefined();
         expect(summary.open_medium).toBeDefined();

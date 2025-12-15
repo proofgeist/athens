@@ -71,7 +71,7 @@ describe('SmartList OData API', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        const item = result.data[0];
+        const item = result.data[0]!;
         expect(item).toHaveProperty('id');
         expect(item).toHaveProperty('title');
         expect(item).toHaveProperty('priority');
@@ -93,7 +93,7 @@ describe('SmartList OData API', () => {
       expect(result.data).toBeDefined();
 
       if (result.data && result.data.length > 0) {
-        const item = result.data[0];
+        const item = result.data[0]!;
         // ProjectAssets should be present as an array
         expect('ProjectAssets' in item).toBe(true);
         const pa = (item as any).ProjectAssets;
@@ -144,6 +144,10 @@ describe('SmartList OData API', () => {
       // Step 3: Alternative approach - fetch ProjectAssets with expanded Projects/Assets
       // This works because we're querying FROM ProjectAssets (direct relationship)
       const firstProjectId = [...projectIds][0];
+      if (!firstProjectId) {
+        console.log('No project IDs found, skipping test');
+        return;
+      }
       console.log('Fetching ProjectAssets for project_id:', firstProjectId);
       
       const query = db

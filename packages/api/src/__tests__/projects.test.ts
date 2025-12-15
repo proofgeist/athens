@@ -75,7 +75,7 @@ describe('Projects OData API', () => {
         return;
       }
       
-      const project = listResult.data[0];
+      const project = listResult.data[0]!;
       
       if (!project.name) {
         console.log('Skipping: Project has no name field');
