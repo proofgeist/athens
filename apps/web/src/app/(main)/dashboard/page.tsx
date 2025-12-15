@@ -6,8 +6,8 @@ import { createServerOrpc } from "@/utils/orpc-server";
 import {
 	DashboardStats,
 	RecentActivity,
-	ActionItemsSummary,
 } from "./dashboard";
+import { ActionItemsSummaryWrapper } from "./action-items-summary-wrapper";
 
 export default async function DashboardPage() {
 	// Session is guaranteed by layout protection - this call is cached
@@ -64,15 +64,7 @@ export default async function DashboardPage() {
 						</div>
 					</div>
 					<div className="col-span-3 rounded-xl border bg-card flex flex-col">
-						<div className="p-6">
-							<h3 className="font-semibold">Action Items Summary</h3>
-							<p className="text-sm text-muted-foreground">
-								Breakdown by priority
-							</p>
-						</div>
-						<div className="p-6 pt-0 flex-1">
-							<ActionItemsSummary />
-						</div>
+						<ActionItemsSummaryWrapper />
 					</div>
 				</div>
 			</div>

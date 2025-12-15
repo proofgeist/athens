@@ -4,9 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { MoreVertical } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuCheckboxItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BarChart, Bar, XAxis } from "recharts";
 import {
 	ChartContainer,
@@ -185,13 +190,53 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-export function ActionItemsSummary() {
-	const [showClosed, setShowClosed] = useState(false);
+export function ActionItemsSummaryHeader({
+	showClosed,
+	setShowClosed,
+}: {
+	showClosed: boolean;
+	setShowClosed: (value: boolean) => void;
+}) {
+	return (
+		<div className="flex items-center justify-between">
+			<div>
+				<h3 className="font-semibold">Action Items Summary</h3>
+				<p className="text-sm text-muted-foreground">
+					Breakdown by priority
+				</p>
+			</div>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="ghost" size="icon" className="h-8 w-8">
+						<MoreVertical className="h-4 w-4" />
+						<span className="sr-only">More options</span>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end">
+					<DropdownMenuCheckboxItem
+						checked={showClosed}
+						onCheckedChange={setShowClosed}
+					>
+						Show completed
+					</DropdownMenuCheckboxItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</div>
+	);
+}
+
+export function ActionItemsSummary({
+	showClosed,
+	setShowClosed,
+}: {
+	showClosed: boolean;
+	setShowClosed: (value: boolean) => void;
+}) {
 	const stats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
 
 	if (stats.isLoading) {
 		return (
-			<div className="h-[300px] flex items-center justify-center">
+			<div className="h-[150px] flex items-center justify-center">
 				<Skeleton className="h-full w-full" />
 			</div>
 		);
@@ -220,60 +265,45 @@ export function ActionItemsSummary() {
 	];
 
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center space-x-2">
-				<Checkbox
-					id="show-closed"
-					checked={showClosed}
-					onCheckedChange={(checked) => setShowClosed(checked === true)}
-				/>
-				<Label
-					htmlFor="show-closed"
-					className="text-sm font-normal cursor-pointer"
+		<div className="h-[150px] w-full">
+			<ChartContainer config={chartConfig}>
+				<BarChart
+					accessibilityLayer
+					data={chartData}
+					margin={{
+						top: 10,
+						right: 20,
+						left: 0,
+						bottom: 5,
+					}}
 				>
-					Show completed
-				</Label>
-			</div>
-			<div className="h-[300px] w-full">
-				<ChartContainer config={chartConfig}>
-					<BarChart
-						accessibilityLayer
-						data={chartData}
-						margin={{
-							top: 20,
-							right: 20,
-							left: 0,
-							bottom: 5,
-						}}
-					>
-						<XAxis
-							dataKey="priority"
-							tickLine={false}
-							tickMargin={10}
-							axisLine={false}
-							tick={{ fill: "hsl(var(--muted-foreground))" }}
-						/>
+					<XAxis
+						dataKey="priority"
+						tickLine={false}
+						tickMargin={10}
+						axisLine={false}
+						tick={{ fill: "hsl(var(--muted-foreground))" }}
+					/>
+					<Bar
+						dataKey="open"
+						stackId="a"
+						fill="var(--color-open)"
+						radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
+					/>
+					{showClosed && (
 						<Bar
-							dataKey="open"
+							dataKey="closed"
 							stackId="a"
-							fill="var(--color-open)"
-							radius={showClosed ? [0, 0, 0, 0] : [4, 4, 4, 4]}
+							fill="var(--color-closed)"
+							radius={[4, 4, 0, 0]}
 						/>
-						{showClosed && (
-							<Bar
-								dataKey="closed"
-								stackId="a"
-								fill="var(--color-closed)"
-								radius={[4, 4, 0, 0]}
-							/>
-						)}
-						<ChartTooltip
-							content={<ChartTooltipContent />}
-							cursor={false}
-						/>
-					</BarChart>
-				</ChartContainer>
-			</div>
+					)}
+					<ChartTooltip
+						content={<ChartTooltipContent />}
+						cursor={false}
+					/>
+				</BarChart>
+			</ChartContainer>
 		</div>
 	);
 }
