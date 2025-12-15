@@ -7,7 +7,7 @@ import {
 	DashboardStats,
 	RecentActivity,
 } from "./dashboard";
-import { ActionItemsSummaryWrapper } from "./action-items-summary-wrapper";
+import { ActionItemsSummaryCard } from "./action-items-summary-card";
 
 export default async function DashboardPage() {
 	// Session is guaranteed by layout protection - this call is cached
@@ -63,9 +63,7 @@ export default async function DashboardPage() {
 							<RecentActivity />
 						</div>
 					</div>
-					<div className="col-span-3 rounded-xl border bg-card flex flex-col overflow-hidden">
-						<ActionItemsSummaryWrapper />
-					</div>
+					<ActionItemsSummaryCard />
 				</div>
 			</div>
 		</HydrationBoundary>

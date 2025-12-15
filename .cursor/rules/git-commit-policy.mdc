@@ -1,0 +1,101 @@
+# Git Commit Policy
+
+Standards for when and how to make git commits during AI-assisted development.
+
+<rule>
+name: git_commit_policy
+description: Defines when the AI assistant should and should not make git commits
+
+core_principle:
+  description: "NEVER commit changes without explicit user instruction"
+  rules:
+    - "Do NOT automatically commit after completing tasks"
+    - "Do NOT commit as part of a 'cleanup' or 'finishing' step"
+    - "Do NOT commit unless the user explicitly says to commit"
+    - "ONLY commit when the user explicitly requests it with phrases like:"
+      examples:
+        - "commit these changes"
+        - "make a commit"
+        - "git commit"
+        - "commit this"
+        - "add a commit for this"
+
+explicit_instructions_required:
+  description: "Commits require clear, direct instruction from the user"
+  allowed_phrases:
+    - "commit"
+    - "make a commit"
+    - "git commit"
+    - "add commits"
+    - "commit these changes"
+    - "commit this work"
+  
+  not_allowed:
+    - Committing after completing a feature
+    - Committing after fixing bugs
+    - Committing after making changes
+    - Committing as part of a cleanup process
+    - Committing without being asked
+
+commit_message_standards:
+  description: "When explicitly asked to commit, follow conventional commit format"
+  format: "type: brief description"
+  types:
+    - "feat: New feature"
+    - "fix: Bug fix"
+    - "refactor: Code refactoring"
+    - "style: UI/styling changes"
+    - "docs: Documentation"
+    - "test: Testing"
+    - "chore: Maintenance"
+
+staging_changes:
+  description: "How to stage changes when committing"
+  rules:
+    - "Use 'git add -A' to stage all changes unless told otherwise"
+    - "User may specify specific files to stage"
+
+workflow:
+  description: "Typical workflow without auto-commits"
+  steps:
+    1: "Make code changes as requested"
+    2: "Test and verify changes work"
+    3: "STOP - wait for user to review"
+    4: "User reviews the changes"
+    5: "If user says to commit, then and only then make a commit"
+
+examples:
+  correct_behavior:
+    - scenario: "User asks to add a feature"
+      action: "Implement the feature, test it, report completion. DO NOT COMMIT."
+    
+    - scenario: "User says 'commit this'"
+      action: "Stage changes and commit with appropriate message."
+    
+    - scenario: "User asks to fix a bug"
+      action: "Fix the bug, verify the fix works. DO NOT COMMIT."
+
+  incorrect_behavior:
+    - scenario: "After completing a task"
+      wrong_action: "Making a commit automatically"
+      reason: "User did not ask for a commit"
+    
+    - scenario: "After multiple changes"
+      wrong_action: "Committing to 'save progress'"
+      reason: "Commits are only made when explicitly requested"
+
+forbidden_patterns:
+  - pattern: "Committing after completing work"
+    reason: "User controls when commits happen"
+  
+  - pattern: "Making multiple commits in one response"
+    reason: "Let user review between commits"
+  
+  - pattern: "Committing as part of cleanup"
+    reason: "Only commit when explicitly asked"
+
+metadata:
+  priority: critical
+  version: 1.0
+  enforcement: strict
+</rule>

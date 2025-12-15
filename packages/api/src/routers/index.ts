@@ -8,9 +8,9 @@ import { issuesSummaryRouter } from "./issuesSummary";
 
 export const appRouter = {
   // Health check
-  healthCheck: publicProcedure.handler(() => {
-    return "OK";
-  }),
+	healthCheck: publicProcedure.handler(() => {
+		return "OK";
+	}),
 
   // RAPTOR routers
   projects: projectsRouter,
@@ -18,7 +18,7 @@ export const appRouter = {
   projectAssets: projectAssetsRouter,
   smartList: smartListRouter,
   issuesSummary: issuesSummaryRouter,
-};
+		};
 
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

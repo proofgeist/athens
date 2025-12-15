@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
-import { db, ProjectAssets } from "../db";
+import { db, ProjectAssets, Projects, Assets } from "../db";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -98,5 +98,43 @@ export const projectAssetsRouter = {
       avgSitCompletion: Math.round(avgSitCompletion),
       avgDocVerification: Math.round(avgDocVerification),
     };
+  }),
+
+  // List project assets for dashboard overview
+  listForDashboard: protectedProcedure.handler(async () => {
+    const result = await db
+      .from(ProjectAssets)
+      .list()
+      .top(5)
+      .expand(Projects, (p) => p.select({ name: Projects.name }))
+      .expand(Assets, (a) => a.select({ name: Assets.name }))
+      .execute();
+
+    if (result.error || !result.data) {
+      return { data: [] };
+    }
+
+    // Map to include projectName and assetName from expanded data
+    const enrichedData = result.data.map((item) => {
+      const projectName = Array.isArray((item as any).Projects) && (item as any).Projects.length > 0
+        ? (item as any).Projects[0]!.name
+        : null;
+      const assetName = Array.isArray((item as any).Assets) && (item as any).Assets.length > 0
+        ? (item as any).Assets[0]!.name
+        : null;
+
+      return {
+        id: item.id,
+        project_id: item.project_id,
+        asset_id: item.asset_id,
+        projectName,
+        assetName,
+        raptor_checklist_completion: item.raptor_checklist_completion ?? 0,
+        sit_completion: item.sit_completion ?? 0,
+        doc_verification_completion: item.doc_verification_completion ?? 0,
+      };
+    });
+
+    return { data: enrichedData };
   }),
 };
