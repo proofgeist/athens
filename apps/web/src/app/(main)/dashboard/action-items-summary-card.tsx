@@ -69,7 +69,7 @@ function ActionItemsSummary() {
 	], [data]);
 
 	const handleBarClick = (priority: string) => {
-		router.push(`/action-items?priority=${priority.toLowerCase()}` as any);
+		router.push(`/action-items?priority=${priority.toLowerCase()}`);
 	};
 
 	const labelList = useMemo(() => (
@@ -131,7 +131,7 @@ function ActionItemsSummary() {
 
 export function ActionItemsSummaryCard() {
 	return (
-		<div className="col-span-3 rounded-xl border bg-card flex flex-col overflow-hidden">
+		<div className="col-span-1 md:col-span-1 lg:col-span-3 rounded-xl border bg-card flex flex-col overflow-hidden w-full">
 			<div className="flex flex-col flex-1 min-h-0">
 				<div className="p-6 pb-0">
 					<ActionItemsSummaryHeader />

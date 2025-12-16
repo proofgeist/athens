@@ -1,0 +1,138 @@
+# No Type Assertions Rule
+
+This rule enforces strict type safety by prohibiting the use of type assertions to bypass TypeScript errors.
+
+<rule>
+name: no_type_assertions
+description: Prohibits using type assertions (as any, as unknown, etc.) to bypass TypeScript errors. Instead, fix the underlying type issue.
+
+principles:
+  type_assertions_forbidden:
+    description: "Type assertions mask bugs and create runtime errors - fix the root cause instead"
+    rules:
+      - "NEVER use 'as any' to silence type errors"
+      - "NEVER use 'as unknown' as an intermediate step to bypass type checking"
+      - "NEVER use type assertions when the types don't match - fix the underlying type definition"
+      - "Use proper type narrowing, type guards, or schema validation instead"
+      - "If a type assertion seems necessary, the type system is telling you something is wrong"
+
+when_types_dont_match:
+  scenarios:
+    - issue: "API types don't match frontend expectations"
+      solution: "Create shared types/schemas that both sides import"
+      example: "Use Zod schemas in a shared package, derive types with z.infer<>"
+    
+    - issue: "Third-party library has incorrect types"
+      solution: "Create a properly typed wrapper or use declaration merging"
+      example: "Extend the module's types in a .d.ts file"
+    
+    - issue: "Need to validate unknown data"
+      solution: "Use Zod parsing with safeParse, handle errors explicitly"
+      example: "const result = Schema.safeParse(data); if (result.success) { ... }"
+    
+    - issue: "Types are too strict for what you're doing"
+      solution: "The types are correct - change your implementation or relax the source types properly"
+      example: "Make fields optional in the schema definition, don't assert them away"
+
+shared_types_pattern:
+  description: "Create shared types that are imported by both API and frontend"
+  rules:
+    - "Define enums, constants, and schemas in the API package"
+    - "Export them from a shared location (e.g., packages/api/src/shared/)"
+    - "Import these shared types in the frontend"
+    - "Use Zod schemas as the single source of truth"
+    - "Derive TypeScript types from Zod schemas with z.infer<>"
+  
+  example: |
+    // ✅ Good: Shared schema in API package
+    // packages/api/src/shared/project-assets.ts
+    import { z } from "zod";
+    
+    export const ProjectAssetSortBySchema = z.enum([
+      "projectName",
+      "assetName",
+      "raptor",
+      "sit",
+      "doc",
+      "remaining",
+    ]);
+    
+    export type ProjectAssetSortBy = z.infer<typeof ProjectAssetSortBySchema>;
+    
+    // Use in API
+    const listDetailedInput = z.object({
+      sortBy: ProjectAssetSortBySchema.optional(),
+      // ...
+    });
+    
+    // Use in frontend
+    import { type ProjectAssetSortBy } from "@athens/api/shared/project-assets";
+    const sortBy = sorting[0]?.id as ProjectAssetSortBy | undefined; // Still need assertion here, but type is shared
+
+proper_type_narrowing:
+  description: "Use type guards and narrowing instead of assertions"
+  patterns:
+    type_guard: |
+      // ✅ Good: Type guard function
+      function isValidSortColumn(value: string): value is ProjectAssetSortBy {
+        return ["projectName", "assetName", "raptor", "sit", "doc", "remaining"].includes(value);
+      }
+      
+      const id = sorting[0]?.id;
+      const sortBy = id && isValidSortColumn(id) ? id : undefined;
+    
+    discriminated_union: |
+      // ✅ Good: Discriminated union
+      type Result<T> = 
+        | { success: true; data: T }
+        | { success: false; error: string };
+      
+      function handleResult(result: Result<User>) {
+        if (result.success) {
+          // TypeScript knows result.data exists
+          console.log(result.data.name);
+        } else {
+          // TypeScript knows result.error exists
+          console.error(result.error);
+        }
+      }
+    
+    zod_validation: |
+      // ✅ Good: Zod validation at boundaries
+      function processData(rawData: unknown) {
+        const result = DataSchema.safeParse(rawData);
+        if (!result.success) {
+          throw new ValidationError(result.error);
+        }
+        // result.data is now fully typed
+        return transformData(result.data);
+      }
+
+exceptions:
+  limited_cases:
+    description: "Very rare cases where type assertions are acceptable"
+    rules:
+      - "When you have more information than TypeScript (document why with a comment)"
+      - "When working with poorly-typed third-party libraries (create a typed wrapper)"
+      - "When dealing with DOM APIs that return generic types (use type guards when possible)"
+    example: |
+      // Acceptable with justification:
+      // We know this is always an HTMLInputElement because of the input type="text"
+      const input = event.target as HTMLInputElement;
+      
+      // Better: Type guard
+      if (event.target instanceof HTMLInputElement) {
+        console.log(event.target.value);
+      }
+
+enforcement:
+  code_review_checklist:
+    - "Any use of 'as any' is automatically rejected"
+    - "Any use of 'as' requires a comment explaining why TypeScript's inference is wrong"
+    - "Look for opportunities to create shared types instead of duplicating type definitions"
+    - "Suggest Zod schemas and z.infer<> for any complex types that need runtime validation"
+
+metadata:
+  priority: critical
+  version: 1.0
+</rule>

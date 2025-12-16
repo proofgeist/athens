@@ -42,6 +42,14 @@ const smartListItemSchema = z.object({
   projectRegion: z.string().nullable().optional(),
   assetName: z.string().nullable().optional(),
   assetType: z.string().nullable().optional(),
+  raptor_checklist_completion: z.number().nullable().optional(),
+  sit_completion: z.number().nullable().optional(),
+  doc_verification_completion: z.number().nullable().optional(),
+  checklist_remaining: z.number().nullable().optional(),
+  checklist_closed: z.number().nullable().optional(),
+  checklist_non_conforming: z.number().nullable().optional(),
+  checklist_not_applicable: z.number().nullable().optional(),
+  checklist_deferred: z.number().nullable().optional(),
 });
 
 const listSmartListOutput = z.object({
@@ -71,16 +79,23 @@ export const smartListRouter = {
         baseQuery = baseQuery.where(filters.length === 1 ? filters[0]! : and(...filters));
       }
 
-      // Execute with or without related data using batch operations
+      // Execute with or without related data using nested expands
       if (includeRelated) {
-        // Step 1: Get SmartList items with ProjectAssets expanded (single-level expand works)
         const smartListResult = await baseQuery
           .expand(ProjectAssets, (paBuilder) =>
-            paBuilder.select({
-              id: ProjectAssets.id,
-              project_id: ProjectAssets.project_id,
-              asset_id: ProjectAssets.asset_id,
-            })
+            paBuilder
+              .expand(Projects, (pBuilder) =>
+                pBuilder.select({
+                  name: Projects.name,
+                  region: Projects.region,
+                })
+              )
+              .expand(Assets, (aBuilder) =>
+                aBuilder.select({
+                  name: Assets.name,
+                  type: Assets.type,
+                })
+              )
           )
           .execute();
 
@@ -88,62 +103,7 @@ export const smartListRouter = {
           return { data: [], total: 0 };
         }
 
-        // Step 2: Collect unique project_ids and asset_ids from ProjectAssets
-        const projectIds = new Set<string>();
-        const assetIds = new Set<string>();
-
-        for (const item of smartListResult.data) {
-          const paArray = item.ProjectAssets;
-          if (Array.isArray(paArray)) {
-            for (const pa of paArray) {
-              if (pa.project_id) projectIds.add(pa.project_id);
-              if (pa.asset_id) assetIds.add(pa.asset_id);
-            }
-          }
-        }
-
-        // Step 3: Use Promise.all instead of batch (batch is broken in fmodata alpha)
-        // Fetch ProjectAssets by project_id with expanded Projects and Assets
-        // Execute queries in parallel using Promise.all (workaround for broken batch)
-        const queryPromises = [...projectIds].map(async (projectId) => {
-          const result = await db.from(ProjectAssets)
-            .list()
-            .where(eq(ProjectAssets.project_id, projectId))
-            .expand(Projects, p => p.select({ name: Projects.name, region: Projects.region }))
-            .expand(Assets, a => a.select({ name: Assets.name, type: Assets.type }))
-            .top(1)
-            .execute();
-          
-          return { projectId, result };
-        });
-
-        const queryResults = await Promise.all(queryPromises);
-
-        // Step 4: Build lookup maps from Promise.all results
-        // Each result contains ProjectAsset with expanded Projects and Assets
-        const projectsMap = new Map<string, { name: string | null; region: string | null }>();
-        const assetsMap = new Map<string, { name: string | null; type: string | null }>();
-
-        for (const { projectId, result } of queryResults) {
-          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-            const pa = result.data[0] as any;
-            const assetId = pa.asset_id;
-            
-            // Extract expanded Projects data
-            if (pa.Projects && Array.isArray(pa.Projects) && pa.Projects.length > 0) {
-              const project = pa.Projects[0];
-              projectsMap.set(projectId, { name: project.name, region: project.region });
-            }
-            
-            // Extract expanded Assets data
-            if (pa.Assets && Array.isArray(pa.Assets) && pa.Assets.length > 0) {
-              const asset = pa.Assets[0];
-              assetsMap.set(assetId, { name: asset.name, type: asset.type });
-            }
-          }
-        }
-
-        // Step 5: Enrich SmartList items with project/asset info
+        // Enrich SmartList items with project/asset info from nested expands
         const enrichedData = smartListResult.data.map((item) => {
           const paArray = item.ProjectAssets;
           let projectName: string | null = null;
@@ -153,45 +113,64 @@ export const smartListRouter = {
 
           if (Array.isArray(paArray) && paArray.length > 0) {
             const pa = paArray[0];
-            if (pa?.project_id && projectsMap.has(pa.project_id)) {
-              const project = projectsMap.get(pa.project_id)!;
-              projectName = project.name;
-              projectRegion = project.region;
+            
+            // Extract expanded Projects data
+            if (pa?.Projects && Array.isArray(pa?.Projects) && pa?.Projects.length > 0) {
+              const project = pa.Projects[0];
+              projectName = project?.name ?? null;
+              projectRegion = project?.region ?? null;
             }
-            if (pa?.asset_id && assetsMap.has(pa.asset_id)) {
-              const asset = assetsMap.get(pa.asset_id)!;
-              assetName = asset.name;
-              assetType = asset.type;
+            
+            // Extract expanded Assets data
+            if (pa?.Assets && Array.isArray(pa?.Assets) && pa?.Assets.length > 0) {
+              const asset = pa?.Assets[0];
+              assetName = asset?.name ?? null;
+              assetType = asset?.type ?? null;
             }
           }
-          
 
+          // Extract only the SmartList fields, excluding ProjectAssets
+          const { ProjectAssets, ...smartListItem } = item;
+          
           return {
-            ...item,
+            ...smartListItem,
             projectName,
             projectRegion,
             assetName,
             assetType,
+            raptor_checklist_completion: ProjectAssets?.[0]?.raptor_checklist_completion ?? 0,
+            sit_completion: ProjectAssets?.[0]?.sit_completion ?? 0,
+            doc_verification_completion: ProjectAssets?.[0]?.doc_verification_completion ?? 0,
+            checklist_remaining: ProjectAssets?.[0]?.checklist_remaining ?? 0,
+            checklist_closed: ProjectAssets?.[0]?.checklist_closed ?? 0,
+            checklist_non_conforming: ProjectAssets?.[0]?.checklist_non_conforming ?? 0,
+            checklist_not_applicable: ProjectAssets?.[0]?.checklist_not_applicable ?? 0,
+            checklist_deferred: ProjectAssets?.[0]?.checklist_deferred ?? 0,
           };
         });
 
-        return {
+        // Validate and return enriched data
+        const output = {
           data: enrichedData,
           total: enrichedData.length,
         };
+        
+        return listSmartListOutput.parse(output);
       }
 
       // Without expand
       const result = await baseQuery.execute();
 
       if (result.error) {
-        return { data: [], total: 0 };
+        return listSmartListOutput.parse({ data: [], total: 0 });
       }
 
-      return {
+      const output = {
         data: result.data ?? [],
         total: result.data?.length ?? 0,
       };
+
+      return listSmartListOutput.parse(output);
     }),
 
   getById: protectedProcedure

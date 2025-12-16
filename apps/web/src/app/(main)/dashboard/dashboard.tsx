@@ -31,7 +31,7 @@ export function DashboardStats() {
 	const highPriority = actionStats.data?.byPriorityAndStatus.High.Open ?? 0;
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			<div className="rounded-xl border bg-card p-6">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<h3 className="text-sm font-medium">Total Projects</h3>
@@ -70,20 +70,17 @@ export function RecentActivity() {
 	const actionItems = useQuery(
 		orpc.smartList.list.queryOptions({
 			input: {
-				limit: 3,
+				limit: 4,
 				status: "Open",
 				includeRelated: true, // Include project/asset info
 			},
 		})
 	);
 
-	const actionStats = useQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} }));
-	const totalOpenItems = actionStats.data?.byStatus.Open ?? 0;
-
 	if (actionItems.isLoading) {
 		return (
-			<div className="space-y-4">
-				{[1, 2, 3].map((i) => (
+			<div className="space-y-2">
+				{[1, 2, 3, 4].map((i) => (
 					<div key={i} className="flex items-center gap-4">
 						<Skeleton className="h-2 w-2 rounded-full" />
 						<div className="flex-1">
@@ -93,7 +90,6 @@ export function RecentActivity() {
 						<Skeleton className="h-5 w-16" />
 					</div>
 				))}
-				<Skeleton className="h-9 w-full mt-4" />
 			</div>
 		);
 	}
@@ -107,59 +103,46 @@ export function RecentActivity() {
 	}
 
 	return (
-		<div className="space-y-2 flex-1 flex flex-col">
-			<div className="flex-1 space-y-2">
-				{items.map((item) => {
-					// Extract enriched project/asset names (typed from API output schema)
-					const projectName = item.projectName;
-					const assetName = item.assetName;
-					const contextInfo = projectName || assetName 
-						? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
-						: item.system_group || "General";
+		<div className="space-y-2">
+			{items.map((item) => {
+				// Extract enriched project/asset names (typed from API output schema)
+				const projectName = item.projectName;
+				const assetName = item.assetName;
+				const contextInfo = projectName || assetName 
+					? `${projectName ?? ""}${projectName && assetName ? " • " : ""}${assetName ?? ""}`
+					: item.system_group || "General";
 
-					return (
-						<div key={item.id} className="flex items-center gap-4">
-							<div
-								className={`h-2 w-2 rounded-full flex-shrink-0 ${
-									item.priority === "High"
-										? "bg-destructive"
-										: item.priority === "Medium"
-											? "bg-yellow-500"
-											: "bg-primary"
-								}`}
-							/>
-							<div className="flex-1 min-w-0">
-								<p className="text-sm font-medium truncate">{item.title}</p>
-								<p className="text-xs text-muted-foreground truncate">
-									{contextInfo}
-								</p>
-							</div>
-							<span
-								className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
-									item.priority === "High"
-										? "bg-destructive/10 text-destructive"
-										: item.priority === "Medium"
-											? "bg-yellow-500/10 text-yellow-600"
-											: "bg-primary/10 text-primary"
-								}`}
-							>
-								{item.priority}
-							</span>
+				return (
+					<div key={item.id} className="flex items-center gap-4">
+						<div
+							className={`h-2 w-2 rounded-full flex-shrink-0 ${
+								item.priority === "High"
+									? "bg-destructive"
+									: item.priority === "Medium"
+										? "bg-yellow-500"
+										: "bg-primary"
+							}`}
+						/>
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium truncate">{item.title}</p>
+							<p className="text-xs text-muted-foreground truncate">
+								{contextInfo}
+							</p>
 						</div>
-					);
-				})}
-			</div>
-			{totalOpenItems > 3 && (
-				<Button
-					variant="outline"
-					className="w-full mt-4"
-					asChild
-				>
-					<Link href={"/action-items" as any}>
-						Show all ({totalOpenItems})
-					</Link>
-				</Button>
-			)}
+						<span
+							className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+								item.priority === "High"
+									? "bg-destructive/10 text-destructive"
+									: item.priority === "Medium"
+										? "bg-yellow-500/10 text-yellow-600"
+										: "bg-primary/10 text-primary"
+							}`}
+						>
+							{item.priority}
+						</span>
+					</div>
+	);
+			})}
 		</div>
 	);
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
 import { db, ProjectAssets, Projects, Assets } from "../db";
+import { ProjectAssetSortBySchema, SortOrderSchema } from "../shared/project-assets";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -11,8 +12,48 @@ const listProjectAssetsInput = z.object({
   offset: z.number().min(0).default(0),
 });
 
+const listDetailedInput = z.object({
+  search: z.string().optional(),
+  phase: z.string().optional(),
+  status: z.string().optional(),
+  assetType: z.string().optional(),
+  sortBy: ProjectAssetSortBySchema.optional(),
+  sortOrder: SortOrderSchema.default("asc"),
+  limit: z.number().min(1).max(10000).default(50), // Increased max for client-side filtering
+  offset: z.number().min(0).default(0),
+});
+
 const getProjectAssetByIdInput = z.object({
   id: z.string(),
+});
+
+// Output schemas
+const projectAssetDetailedItemSchema = z.object({
+  id: z.string().nullable(),
+  project_id: z.string().nullable(),
+  asset_id: z.string().nullable(),
+  raptor_checklist_completion: z.number().nullable(),
+  sit_completion: z.number().nullable(),
+  doc_verification_completion: z.number().nullable(),
+  checklist_remaining: z.number().nullable(),
+  checklist_closed: z.number().nullable(),
+  checklist_non_conforming: z.number().nullable(),
+  checklist_not_applicable: z.number().nullable(),
+  checklist_deferred: z.number().nullable(),
+  // Enriched fields from related data
+  projectName: z.string().nullable().optional(),
+  projectRegion: z.string().nullable().optional(),
+  projectPhase: z.string().nullable().optional(),
+  projectStatus: z.string().nullable().optional(),
+  projectOverallCompletion: z.number().nullable().optional(),
+  assetName: z.string().nullable().optional(),
+  assetType: z.string().nullable().optional(),
+  assetLocation: z.string().nullable().optional(),
+});
+
+const listDetailedOutput = z.object({
+  data: z.array(projectAssetDetailedItemSchema),
+  total: z.number(),
 });
 
 // ProjectAssets router (protected - requires authentication)
@@ -26,7 +67,7 @@ export const projectAssetsRouter = {
       if (project_id) filters.push(eq(ProjectAssets.project_id, project_id));
       if (asset_id) filters.push(eq(ProjectAssets.asset_id, asset_id));
 
-      let query = db.from(ProjectAssets).list().top(limit).skip(offset);
+      let query = db.from(ProjectAssets).list().top(limit).skip(offset).expand(Projects).expand(Assets);
       
       if (filters.length > 0) {
         query = query.where(filters.length === 1 ? filters[0]! : and(...filters));
@@ -116,11 +157,11 @@ export const projectAssetsRouter = {
 
     // Map to include projectName and assetName from expanded data
     const enrichedData = result.data.map((item) => {
-      const projectName = Array.isArray((item as any).Projects) && (item as any).Projects.length > 0
-        ? (item as any).Projects[0]!.name
+      const projectName = Array.isArray(item?.Projects) && item?.Projects.length > 0
+        ? item?.Projects[0]!.name
         : null;
-      const assetName = Array.isArray((item as any).Assets) && (item as any).Assets.length > 0
-        ? (item as any).Assets[0]!.name
+      const assetName = Array.isArray(item?.Assets) && item?.Assets.length > 0
+        ? item?.Assets[0]!.name
         : null;
 
       return {
@@ -137,4 +178,166 @@ export const projectAssetsRouter = {
 
     return { data: enrichedData };
   }),
+
+  // List project assets with detailed filtering, sorting, and pagination
+  listDetailed: protectedProcedure
+    .input(listDetailedInput)
+    .output(listDetailedOutput)
+    .handler(async ({ input }) => {
+      const { limit, offset } = input;
+
+      // Fetch data with expanded Projects and Assets
+      const result = await db
+        .from(ProjectAssets)
+        .list()
+        .top(1000) // Fetch more for client-side filtering/sorting
+        .expand(Projects, (p) =>
+          p.select({
+            name: Projects.name,
+            region: Projects.region,
+            phase: Projects.phase,
+            status: Projects.status,
+            overall_completion: Projects.overall_completion,
+          })
+        )
+        .expand(Assets, (a) =>
+          a.select({
+            name: Assets.name,
+            type: Assets.type,
+            location: Assets.location,
+          })
+        )
+        .execute();
+
+      if (result.error || !result.data) {
+        return listDetailedOutput.parse({ data: [], total: 0 });
+      }
+
+      // Enrich and flatten the data
+      let enrichedData = result.data.map((item) => {
+        const projectArray = item.Projects;
+        const assetArray = item.Assets;
+
+        let projectName: string | null = null;
+        let projectRegion: string | null = null;
+        let projectPhase: string | null = null;
+        let projectStatus: string | null = null;
+        let projectOverallCompletion: number | null = null;
+        let assetName: string | null = null;
+        let assetType: string | null = null;
+        let assetLocation: string | null = null;
+
+        if (Array.isArray(projectArray) && projectArray.length > 0) {
+          const project = projectArray[0];
+          projectName = project?.name ?? null;
+          projectRegion = project?.region ?? null;
+          projectPhase = project?.phase ?? null;
+          projectStatus = project?.status ?? null;
+          projectOverallCompletion = project?.overall_completion ?? null;
+        }
+
+        if (Array.isArray(assetArray) && assetArray.length > 0) {
+          const asset = assetArray[0];
+          assetName = asset?.name ?? null;
+          assetType = asset?.type ?? null;
+          assetLocation = asset?.location ?? null;
+        }
+
+        // Extract only the ProjectAssets fields, excluding expanded arrays
+        const { Projects: _, Assets: __, ...projectAssetItem } = item;
+
+        return {
+          ...projectAssetItem,
+          projectName,
+          projectRegion,
+          projectPhase,
+          projectStatus,
+          projectOverallCompletion,
+          assetName,
+          assetType,
+          assetLocation,
+        };
+      });
+
+      // Apply filters
+      if (input.search) {
+        const searchLower = input.search.toLowerCase();
+        enrichedData = enrichedData.filter(
+          (item) =>
+            item.projectName?.toLowerCase().includes(searchLower) ||
+            item.assetName?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      if (input.phase) {
+        enrichedData = enrichedData.filter(
+          (item) => item.projectPhase === input.phase
+        );
+      }
+
+      if (input.status) {
+        enrichedData = enrichedData.filter(
+          (item) => item.projectStatus === input.status
+        );
+      }
+
+      if (input.assetType) {
+        enrichedData = enrichedData.filter(
+          (item) => item.assetType === input.assetType
+        );
+      }
+
+      // Apply sorting
+      if (input.sortBy) {
+        enrichedData.sort((a, b) => {
+          let aVal: any;
+          let bVal: any;
+
+          switch (input.sortBy) {
+            case "projectName":
+              aVal = a.projectName?.toLowerCase() ?? "";
+              bVal = b.projectName?.toLowerCase() ?? "";
+              break;
+            case "assetName":
+              aVal = a.assetName?.toLowerCase() ?? "";
+              bVal = b.assetName?.toLowerCase() ?? "";
+              break;
+            case "raptor":
+              aVal = a.raptor_checklist_completion ?? 0;
+              bVal = b.raptor_checklist_completion ?? 0;
+              break;
+            case "sit":
+              aVal = a.sit_completion ?? 0;
+              bVal = b.sit_completion ?? 0;
+              break;
+            case "doc":
+              aVal = a.doc_verification_completion ?? 0;
+              bVal = b.doc_verification_completion ?? 0;
+              break;
+            case "remaining":
+              aVal = a.checklist_remaining ?? 0;
+              bVal = b.checklist_remaining ?? 0;
+              break;
+            default:
+              aVal = 0;
+              bVal = 0;
+          }
+
+          if (aVal < bVal) return input.sortOrder === "asc" ? -1 : 1;
+          if (aVal > bVal) return input.sortOrder === "asc" ? 1 : -1;
+          return 0;
+        });
+      }
+
+      // Apply pagination
+      const total = enrichedData.length;
+      const paginatedData = enrichedData.slice(offset, offset + limit);
+
+      const output = {
+        data: paginatedData,
+        total,
+      };
+
+      return listDetailedOutput.parse(output);
+    }),
 };

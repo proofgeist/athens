@@ -8,6 +8,8 @@ import {
 	RecentActivity,
 } from "./dashboard";
 import { ActionItemsSummaryCard } from "./action-items-summary-card";
+import { ProjectAssetsCard } from "./project-assets-card";
+import { OpenActionItemsCard } from "./open-action-items-card";
 
 export default async function DashboardPage() {
 	// Session is guaranteed by layout protection - this call is cached
@@ -22,11 +24,12 @@ export default async function DashboardPage() {
 	// Prefetch all dashboard data on the server
 	await Promise.all([
 		queryClient.prefetchQuery(orpc.projectAssets.getSummaryStats.queryOptions()),
+		queryClient.prefetchQuery(orpc.projectAssets.listForDashboard.queryOptions()),
 		queryClient.prefetchQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} })),
 		queryClient.prefetchQuery(
 			orpc.smartList.list.queryOptions({
 				input: {
-					limit: 3,
+					limit: 4,
 					status: "Open",
 					includeRelated: true,
 				},
@@ -36,7 +39,7 @@ export default async function DashboardPage() {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
 				{/* Page header */}
 				<div className="flex items-center justify-between py-4">
 					<div>
@@ -52,18 +55,13 @@ export default async function DashboardPage() {
 
 				{/* Main content area */}
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-					<div className="col-span-4 rounded-xl border bg-card flex flex-col">
-						<div className="p-6 pb-2">
-							<h3 className="font-semibold">Open Action Items</h3>
-							<p className="text-sm text-muted-foreground">
-								Items requiring your attention
-							</p>
-						</div>
-						<div className="p-6 pt-0 flex-1 flex flex-col">
-							<RecentActivity />
-						</div>
-					</div>
+					<OpenActionItemsCard />
 					<ActionItemsSummaryCard />
+				</div>
+
+				{/* Project assets overview */}
+				<div className="grid gap-4">
+					<ProjectAssetsCard />
 				</div>
 			</div>
 		</HydrationBoundary>
