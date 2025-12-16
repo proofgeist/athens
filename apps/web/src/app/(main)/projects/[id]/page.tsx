@@ -1,5 +1,3 @@
-
-export function page() {
-
-    return <>null</>
+export default function ProjectDetailPage() {
+	return <div>Project detail page</div>;
 }
