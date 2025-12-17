@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
+			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden h-full">
 				{/* Page header */}
 				<div className="flex items-center justify-between py-4">
 					<div>

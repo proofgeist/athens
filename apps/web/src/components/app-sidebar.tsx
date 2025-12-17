@@ -46,21 +46,11 @@ const navItems: NavItem[] = [
 		title: "Projects",
 		url: "/projects",
 		icon: FolderKanban,
-		items: [
-			{ title: "All Projects", url: "/projects" },
-			{ title: "Active", url: "/projects?status=active" },
-			{ title: "Completed", url: "/projects?status=completed" },
-		],
 	},
 	{
-		title: "Inspections",
-		url: "/inspections",
+		title: "Action Items",
+		url: "/action-items",
 		icon: ClipboardList,
-		items: [
-			{ title: "RAPTOR Checklist", url: "/inspections/raptor" },
-			{ title: "System Integration", url: "/inspections/sit" },
-			{ title: "Document Verification", url: "/inspections/docs" },
-		],
 	},
 	{
 		title: "Reports",

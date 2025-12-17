@@ -11,7 +11,8 @@
 				"FM_DATABASE",
 				"FM_USERNAME",
 				"FM_PASSWORD",
-				"OTTO_API_KEY"
+				"OTTO_API_KEY",
+				"BETTER_AUTH_SECRET"
 			]
 		},
 		"lint": {

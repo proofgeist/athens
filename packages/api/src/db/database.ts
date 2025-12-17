@@ -1,8 +1,20 @@
 import { FMServerConnection } from "@proofkit/fmodata";
 
-if (!process.env.FM_SERVER) throw new Error("FM_SERVER is not set");
-if (!process.env.OTTO_API_KEY) throw new Error("OTTO_API_KEY is not set");
-if (!process.env.FM_DATABASE) throw new Error("FM_DATABASE is not set");
+if (!process.env.FM_SERVER) {
+	throw new Error(
+		"FM_SERVER environment variable is not set. Please configure it in your deployment environment (e.g., Vercel Environment Variables)."
+	);
+}
+if (!process.env.OTTO_API_KEY) {
+	throw new Error(
+		"OTTO_API_KEY environment variable is not set. Please configure it in your deployment environment (e.g., Vercel Environment Variables)."
+	);
+}
+if (!process.env.FM_DATABASE) {
+	throw new Error(
+		"FM_DATABASE environment variable is not set. Please configure it in your deployment environment (e.g., Vercel Environment Variables)."
+	);
+}
 
 // Create a connection to the server
 const connection = new FMServerConnection({

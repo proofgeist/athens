@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,6 +15,8 @@ import {
 	type ColumnFiltersState,
 } from "@tanstack/react-table";
 import { orpc } from "@/utils/orpc";
+import { projectAssetDetailedItemSchema } from "@athens/api/routers/projectAssets";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,35 +28,31 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompletionBadge } from "@/components/completion-badge";
-import { ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List } from "lucide-react";
 
-type ProjectAssetItem = {
-	id: string | null;
-	project_id: string | null;
-	asset_id: string | null;
-	raptor_checklist_completion: number | null;
-	sit_completion: number | null;
-	doc_verification_completion: number | null;
-	checklist_remaining: number | null;
-	checklist_closed: number | null;
-	checklist_non_conforming: number | null;
-	checklist_not_applicable: number | null;
-	checklist_deferred: number | null;
-	projectName?: string | null;
-	projectRegion?: string | null;
-	projectPhase?: string | null;
-	projectStatus?: string | null;
-	projectOverallCompletion?: number | null;
-	assetName?: string | null;
-	assetType?: string | null;
-	assetLocation?: string | null;
-};
+type ProjectAssetItem = z.infer<typeof projectAssetDetailedItemSchema>;
 
 export function ProjectsListClient() {
 	const router = useRouter();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
+	const [viewMode, setViewMode] = useState<"table" | "card">(() => {
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("projects-view-mode");
+			if (saved === "table" || saved === "card") {
+				return saved;
+			}
+		}
+		return "table";
+	});
+
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			localStorage.setItem("projects-view-mode", viewMode);
+		}
+	}, [viewMode]);
 
 	// Fetch all data from server - let TanStack Table handle filtering client-side
 	const { data, isLoading } = useQuery(
@@ -76,16 +74,22 @@ export function ProjectsListClient() {
 					return (
 						<Button
 							variant="ghost"
-							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
 							className="-ml-4"
 						>
 							Project
 							{isSorted === "asc" ? (
-								<ArrowUp className="ml-2 h-4 w-4" />
+								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
-								<ArrowDown className="ml-2 h-4 w-2" />
+								<ChevronDown className="ml-2 h-4 w-2" />
 							) : (
-								<ArrowUpDown className="ml-2 h-4 w-4" />
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							)}
 						</Button>
 					);
@@ -105,16 +109,22 @@ export function ProjectsListClient() {
 					return (
 						<Button
 							variant="ghost"
-							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
 							className="-ml-4"
 						>
 							Rig
 							{isSorted === "asc" ? (
-								<ArrowUp className="ml-2 h-4 w-4" />
+								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
-								<ArrowDown className="ml-2 h-4 w-2" />
+								<ChevronDown className="ml-2 h-4 w-2" />
 							) : (
-								<ArrowUpDown className="ml-2 h-4 w-4" />
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							)}
 						</Button>
 					);
@@ -136,32 +146,106 @@ export function ProjectsListClient() {
 				enableColumnFilter: true,
 				filterFn: "equalsString",
 			},
-			// Hidden columns for filtering only
 			{
 				accessorKey: "projectPhase",
 				id: "projectPhase",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							Phase
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className="text-muted-foreground">
+						{row.original.projectPhase || "—"}
+					</div>
+				),
 				enableColumnFilter: true,
 				filterFn: "equalsString",
 			},
 			{
 				accessorKey: "projectStatus",
 				id: "projectStatus",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							Status
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className="text-muted-foreground">
+						{row.original.projectStatus || "—"}
+					</div>
+				),
 				enableColumnFilter: true,
 				filterFn: "equalsString",
 			},
 			{
-				accessorKey: "raptor",
+				accessorKey: "raptor_checklist_completion",
 				id: "raptor",
-				header: ({ column }) => (
-					<Button
-						variant="ghost"
-						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-						className="-ml-4"
-					>
-						RAPTOR
-						<ArrowUpDown className="ml-2 h-4 w-4" />
-					</Button>
-				),
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							RAPTOR
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
 				cell: ({ row }) => (
 					<CompletionBadge value={row.original.raptor_checklist_completion} />
 				),
@@ -174,16 +258,22 @@ export function ProjectsListClient() {
 					return (
 						<Button
 							variant="ghost"
-							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
 							className="-ml-4"
 						>
 							SIT
 							{isSorted === "asc" ? (
-								<ArrowUp className="ml-2 h-4 w-4" />
+								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
-								<ArrowDown className="ml-2 h-4 w-2" />
+								<ChevronDown className="ml-2 h-4 w-2" />
 							) : (
-								<ArrowUpDown className="ml-2 h-4 w-4" />
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							)}
 						</Button>
 					);
@@ -200,16 +290,22 @@ export function ProjectsListClient() {
 					return (
 						<Button
 							variant="ghost"
-							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
 							className="-ml-4"
 						>
 							Doc
 							{isSorted === "asc" ? (
-								<ArrowUp className="ml-2 h-4 w-4" />
+								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
-								<ArrowDown className="ml-2 h-4 w-2" />
+								<ChevronDown className="ml-2 h-4 w-2" />
 							) : (
-								<ArrowUpDown className="ml-2 h-4 w-4" />
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							)}
 						</Button>
 					);
@@ -226,16 +322,22 @@ export function ProjectsListClient() {
 					return (
 						<Button
 							variant="ghost"
-							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
 							className="-ml-4"
 						>
 							Remaining
 							{isSorted === "asc" ? (
-								<ArrowUp className="ml-2 h-4 w-4" />
+								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
-								<ArrowDown className="ml-2 h-4 w-2" />
+								<ChevronDown className="ml-2 h-4 w-2" />
 							) : (
-								<ArrowUpDown className="ml-2 h-4 w-4" />
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							)}
 						</Button>
 					);
@@ -261,10 +363,6 @@ export function ProjectsListClient() {
 			sorting,
 			columnFilters,
 			globalFilter,
-			columnVisibility: {
-				projectPhase: false, // Hide filter-only columns
-				projectStatus: false,
-			},
 		},
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
@@ -280,6 +378,21 @@ export function ProjectsListClient() {
 	const handleRowClick = (row: ProjectAssetItem) => {
 		if (row.project_id) {
 			router.push(`/projects/${row.project_id}`);
+		}
+	};
+
+	const getStatusColor = (status: string | null | undefined) => {
+		switch (status) {
+			case "Active":
+				return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+			case "On Hold":
+				return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+			case "Completed":
+				return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+			case "Cancelled":
+				return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+			default:
+				return "bg-muted text-muted-foreground";
 		}
 	};
 
@@ -302,9 +415,9 @@ export function ProjectsListClient() {
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="flex flex-1 flex-col gap-4">
 			{/* Filters */}
-			<div className="flex flex-col gap-4 sm:flex-row">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
 				<Input
 					placeholder="Search projects and rigs..."
 					value={globalFilter ?? ""}
@@ -315,9 +428,14 @@ export function ProjectsListClient() {
 					value={
 						(table.getColumn("projectPhase")?.getFilterValue() as string) ?? "all"
 					}
-					onValueChange={(value) =>
-						table.getColumn("projectPhase")?.setFilterValue(value === "all" ? undefined : value)
-					}
+					onValueChange={(value) => {
+						const currentValue = (table.getColumn("projectPhase")?.getFilterValue() as string) ?? "all";
+						if (value === "all" || value === currentValue) {
+							table.getColumn("projectPhase")?.setFilterValue(undefined);
+						} else {
+							table.getColumn("projectPhase")?.setFilterValue(value);
+						}
+					}}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder="Phase" />
@@ -335,9 +453,14 @@ export function ProjectsListClient() {
 					value={
 						(table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all"
 					}
-					onValueChange={(value) =>
-						table.getColumn("projectStatus")?.setFilterValue(value === "all" ? undefined : value)
-					}
+					onValueChange={(value) => {
+						const currentValue = (table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all";
+						if (value === "all" || value === currentValue) {
+							table.getColumn("projectStatus")?.setFilterValue(undefined);
+						} else {
+							table.getColumn("projectStatus")?.setFilterValue(value);
+						}
+					}}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder="Status" />
@@ -354,9 +477,14 @@ export function ProjectsListClient() {
 					value={
 						(table.getColumn("assetType")?.getFilterValue() as string) ?? "all"
 					}
-					onValueChange={(value) =>
-						table.getColumn("assetType")?.setFilterValue(value === "all" ? undefined : value)
-					}
+					onValueChange={(value) => {
+						const currentValue = (table.getColumn("assetType")?.getFilterValue() as string) ?? "all";
+						if (value === "all" || value === currentValue) {
+							table.getColumn("assetType")?.setFilterValue(undefined);
+						} else {
+							table.getColumn("assetType")?.setFilterValue(value);
+						}
+					}}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder="Rig Type" />
@@ -369,10 +497,99 @@ export function ProjectsListClient() {
 						<SelectItem value="Jack-up">Jack-up</SelectItem>
 					</SelectContent>
 				</Select>
+				<div className="flex gap-1 border rounded-md p-1">
+					<Button
+						variant={viewMode === "table" ? "secondary" : "ghost"}
+						size="sm"
+						onClick={() => setViewMode("table")}
+						className="h-8 w-8 p-0"
+					>
+						<List className="h-4 w-4" />
+					</Button>
+					<Button
+						variant={viewMode === "card" ? "secondary" : "ghost"}
+						size="sm"
+						onClick={() => setViewMode("card")}
+						className="h-8 w-8 p-0"
+					>
+						<LayoutGrid className="h-4 w-4" />
+					</Button>
+				</div>
 			</div>
 
-			{/* Table */}
-			<div className="rounded-md border">
+			{/* Table or Card View */}
+			<div className="flex-1">
+				{viewMode === "card" ? (
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+					{table.getRowModel().rows.length === 0 ? (
+						<div className="col-span-full py-12 text-center text-muted-foreground">
+							No projects found
+						</div>
+					) : (
+						table.getRowModel().rows.map((row) => {
+							const item = row.original;
+							return (
+								<Card
+									key={row.id}
+									className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 flex flex-col"
+									onClick={() => handleRowClick(item)}
+								>
+									<div className="flex-1 flex flex-col">
+										<CardHeader className="pb-3 flex-shrink-0">
+											<div className="flex items-start justify-between gap-2">
+												<CardTitle className="text-base leading-tight line-clamp-2">
+													{item.projectName || "Unknown Project"}
+												</CardTitle>
+												{item.projectStatus && (
+													<span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 ${getStatusColor(item.projectStatus)}`}>
+														{item.projectStatus}
+													</span>
+												)}
+											</div>
+											<CardDescription className="text-sm">
+												{item.assetName || "Unknown Rig"}
+												{item.assetType && (
+													<>
+														{" • "}
+														<span className="text-muted-foreground">{item.assetType}</span>
+													</>
+												)}
+											</CardDescription>
+										</CardHeader>
+										<CardContent className="pb-3 flex-1">
+											{item.projectPhase && (
+												<div className="text-sm text-muted-foreground mb-3">
+													Phase: <span className="font-medium text-foreground">{item.projectPhase}</span>
+												</div>
+											)}
+											<div className="space-y-2">
+												<div className="flex items-center justify-between text-xs">
+													<span className="text-muted-foreground">RAPTOR</span>
+													<CompletionBadge value={item.raptor_checklist_completion} />
+												</div>
+												<div className="flex items-center justify-between text-xs">
+													<span className="text-muted-foreground">SIT</span>
+													<CompletionBadge value={item.sit_completion} />
+												</div>
+												<div className="flex items-center justify-between text-xs">
+													<span className="text-muted-foreground">Doc</span>
+													<CompletionBadge value={item.doc_verification_completion} />
+												</div>
+											</div>
+										</CardContent>
+									</div>
+									<CardFooter className="pt-3 border-t flex-shrink-0">
+										<div className="text-sm text-muted-foreground">
+											<span className="font-medium text-foreground">{item.checklist_remaining ?? 0}</span> items remaining
+										</div>
+									</CardFooter>
+								</Card>
+							);
+						})
+					)}
+				</div>
+			) : (
+				<div className="rounded-md border">
 				<div className="overflow-x-auto">
 					<table className="w-full">
 						<thead>
@@ -425,6 +642,8 @@ export function ProjectsListClient() {
 						</tbody>
 					</table>
 				</div>
+			</div>
+				)}
 			</div>
 
 			{/* Pagination */}

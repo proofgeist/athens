@@ -28,7 +28,7 @@ const getProjectAssetByIdInput = z.object({
 });
 
 // Output schemas
-const projectAssetDetailedItemSchema = z.object({
+export const projectAssetDetailedItemSchema = z.object({
   id: z.string().nullable(),
   project_id: z.string().nullable(),
   asset_id: z.string().nullable(),

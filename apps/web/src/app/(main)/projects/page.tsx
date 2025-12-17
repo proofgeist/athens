@@ -27,16 +27,10 @@ export default async function ProjectsPage() {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-						<p className="text-muted-foreground">
-							Manage and track project completion across all rigs
-						</p>
-					</div>
+			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full">
+				<div className="flex flex-1 flex-col min-h-0">
+					<ProjectsListClient />
 				</div>
-				<ProjectsListClient />
 			</div>
 		</HydrationBoundary>
 	);
