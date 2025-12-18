@@ -24,9 +24,9 @@ export default async function proxy(request: NextRequest) {
 		return NextResponse.redirect(loginUrl);
 	}
 
-	// Redirect authenticated users away from login to dashboard
+	// Redirect authenticated users away from login to projects
 	if (isPublicRoute && session?.user) {
-		return NextResponse.redirect(new URL("/dashboard", request.url));
+		return NextResponse.redirect(new URL("/projects", request.url));
 	}
 
 	return NextResponse.next();

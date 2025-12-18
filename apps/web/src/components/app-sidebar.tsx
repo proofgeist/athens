@@ -2,13 +2,8 @@
 
 import * as React from "react";
 import {
-	LayoutDashboard,
 	FolderKanban,
 	ClipboardList,
-	BarChart3,
-	Settings,
-	HelpCircle,
-	Code2,
 	type LucideIcon,
 } from "lucide-react";
 
@@ -37,12 +32,6 @@ type NavItem = {
 
 const navItems: NavItem[] = [
 	{
-		title: "Dashboard",
-		url: "/dashboard",
-		icon: LayoutDashboard,
-		isActive: true,
-	},
-	{
 		title: "Projects",
 		url: "/projects",
 		icon: FolderKanban,
@@ -52,31 +41,7 @@ const navItems: NavItem[] = [
 		url: "/action-items",
 		icon: ClipboardList,
 	},
-	{
-		title: "Reports",
-		url: "/reports",
-		icon: BarChart3,
-		items: [
-			{ title: "Overview", url: "/reports" },
-			{ title: "Action Items", url: "/reports/action-items" },
-			{ title: "Progress", url: "/reports/progress" },
-		],
-	},
-	{
-		title: "API Routes",
-		url: "/routes" as "/",
-		icon: Code2,
-	},
-	{
-		title: "Settings",
-		url: "/settings",
-		icon: Settings,
-	},
-	{
-		title: "Help",
-		url: "/help",
-		icon: HelpCircle,
-	},
+	// Hidden secret: API Routes accessible at /routes but not shown in sidebar
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

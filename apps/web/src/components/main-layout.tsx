@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +10,35 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
 
+const ROUTE_TITLES: Record<string, string> = {
+	"/dashboard": "Dashboard",
+	"/projects": "Projects",
+	"/action-items": "Action Items",
+	"/routes": "API Routes Tester",
+};
+
+function getPageTitle(pathname: string): string {
+	// Check exact matches first
+	if (ROUTE_TITLES[pathname]) {
+		return ROUTE_TITLES[pathname];
+	}
+
+	// Handle dynamic routes
+	if (pathname.startsWith("/projects/") && pathname !== "/projects") {
+		return "Project Details";
+	}
+	if (pathname.startsWith("/action-items/") && pathname !== "/action-items") {
+		return "Action Item Details";
+	}
+
+	// Default fallback
+	return "";
+}
+
 export function MainLayout({ children }: { children: React.ReactNode }) {
+	const pathname = usePathname();
+	const pageTitle = getPageTitle(pathname);
+
 	return (
 		<SidebarProvider>
 			<AppSidebar />
@@ -23,6 +52,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 						/>
 					</div>
 					<div className="flex items-center gap-2">
+						{pageTitle && (
+							<>
+								<span className="text-sm font-medium">{pageTitle}</span>
+								<Separator
+									orientation="vertical"
+									className="mx-2 data-[orientation=vertical]:h-4"
+								/>
+							</>
+						)}
 						<ModeToggle />
 					</div>
 				</header>
