@@ -2,13 +2,14 @@ import { z } from "zod";
 import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
 import { db, Projects } from "../db";
+import { ProjectStatusSchema } from "../db/schemas/filemaker/generated/Projects";
 
 // Input schemas
 const listProjectsInput = z.object({
   region: z.string().optional(),
   phase: z.string().optional(),
   risk_level: z.string().optional(),
-  status: z.string().optional(),
+  status: ProjectStatusSchema.optional(),
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
 });

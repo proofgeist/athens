@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useLocalStorage } from "usehooks-ts";
 import {
 	useReactTable,
 	getCoreRowModel,
@@ -16,6 +17,7 @@ import {
 } from "@tanstack/react-table";
 import { orpc } from "@/utils/orpc";
 import { projectAssetDetailedItemSchema } from "@athens/api/routers/projectAssets";
+import { ProjectStatusSchema } from "@athens/api/db/schemas/filemaker/generated/Projects";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,8 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompletionBadge } from "@/components/completion-badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List } from "lucide-react";
+import { Card, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List, Calendar, Ship, Briefcase, ListTodo } from "lucide-react";
 
 type ProjectAssetItem = z.infer<typeof projectAssetDetailedItemSchema>;
 
@@ -38,21 +40,7 @@ export function ProjectsListClient() {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
-	const [viewMode, setViewMode] = useState<"table" | "card">(() => {
-		if (typeof window !== "undefined") {
-			const saved = localStorage.getItem("projects-view-mode");
-			if (saved === "table" || saved === "card") {
-				return saved;
-			}
-		}
-		return "table";
-	});
-
-	useEffect(() => {
-		if (typeof window !== "undefined") {
-			localStorage.setItem("projects-view-mode", viewMode);
-		}
-	}, [viewMode]);
+	const [viewMode, setViewMode] = useLocalStorage<"table" | "card">("projects-view-mode", "card");
 
 	// Fetch all data from server - let TanStack Table handle filtering client-side
 	const { data, isLoading } = useQuery(
@@ -147,42 +135,6 @@ export function ProjectsListClient() {
 				filterFn: "equalsString",
 			},
 			{
-				accessorKey: "projectPhase",
-				id: "projectPhase",
-				header: ({ column }) => {
-					const isSorted = column.getIsSorted();
-					return (
-						<Button
-							variant="ghost"
-							onClick={() => {
-								if (isSorted === "desc") {
-									column.clearSorting();
-								} else {
-									column.toggleSorting(isSorted === "asc");
-								}
-							}}
-							className="-ml-4"
-						>
-							Phase
-							{isSorted === "asc" ? (
-								<ChevronUp className="ml-2 h-4 w-4" />
-							) : isSorted === "desc" ? (
-								<ChevronDown className="ml-2 h-4 w-2" />
-							) : (
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							)}
-						</Button>
-					);
-				},
-				cell: ({ row }) => (
-					<div className="text-muted-foreground">
-						{row.original.projectPhase || "—"}
-					</div>
-				),
-				enableColumnFilter: true,
-				filterFn: "equalsString",
-			},
-			{
 				accessorKey: "projectStatus",
 				id: "projectStatus",
 				header: ({ column }) => {
@@ -217,6 +169,110 @@ export function ProjectsListClient() {
 				),
 				enableColumnFilter: true,
 				filterFn: "equalsString",
+			},
+			{
+				accessorKey: "projectStartDate",
+				id: "projectStartDate",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							Start Date
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className="text-muted-foreground">
+						{row.original.projectStartDate
+							? new Date(row.original.projectStartDate).toLocaleDateString()
+							: "—"}
+					</div>
+				),
+			},
+			{
+				accessorKey: "projectEndDate",
+				id: "projectEndDate",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							End Date
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className="text-muted-foreground">
+						{row.original.projectEndDate
+							? new Date(row.original.projectEndDate).toLocaleDateString()
+							: "—"}
+					</div>
+				),
+			},
+			{
+				accessorKey: "projectOverallCompletion",
+				id: "projectOverallCompletion",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							Overall
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<CompletionBadge value={row.original.projectOverallCompletion} />
+				),
 			},
 			{
 				accessorKey: "raptor_checklist_completion",
@@ -381,18 +437,66 @@ export function ProjectsListClient() {
 		}
 	};
 
-	const getStatusColor = (status: string | null | undefined) => {
+	type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
+
+	const getStatusColor = (status: ProjectStatus | null | undefined): string => {
+		if (!status) return "bg-muted text-muted-foreground";
+
 		switch (status) {
-			case "Active":
+			case "In Progress":
 				return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-			case "On Hold":
+			case "Before Start":
 				return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
 			case "Completed":
 				return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
 			case "Cancelled":
 				return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+			case "Closed":
+				return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+			case "Closeable":
+				return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+			case "Verbal":
+				return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+			case "Unknown":
 			default:
 				return "bg-muted text-muted-foreground";
+		}
+	};
+
+	const getReadinessScoreColor = (score: number | null | undefined): string => {
+		if (score === null || score === undefined) return "bg-muted text-muted-foreground";
+		
+		// Red: 0-59, Yellow: 60-79, Green: 80-100
+		if (score >= 80) {
+			return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+		} else if (score >= 60) {
+			return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+		} else {
+			return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+		}
+	};
+
+	const getStatusDotColor = (status: ProjectStatus | null | undefined): string => {
+		if (!status) return "bg-muted-foreground";
+
+		switch (status) {
+			case "In Progress":
+				return "bg-green-500";
+			case "Before Start":
+				return "bg-yellow-500";
+			case "Completed":
+				return "bg-blue-500";
+			case "Cancelled":
+				return "bg-red-500";
+			case "Closed":
+				return "bg-gray-500";
+			case "Closeable":
+				return "bg-purple-500";
+			case "Verbal":
+				return "bg-orange-500";
+			case "Unknown":
+			default:
+				return "bg-muted-foreground";
 		}
 	};
 
@@ -426,31 +530,6 @@ export function ProjectsListClient() {
 				/>
 				<Select
 					value={
-						(table.getColumn("projectPhase")?.getFilterValue() as string) ?? "all"
-					}
-					onValueChange={(value) => {
-						const currentValue = (table.getColumn("projectPhase")?.getFilterValue() as string) ?? "all";
-						if (value === "all" || value === currentValue) {
-							table.getColumn("projectPhase")?.setFilterValue(undefined);
-						} else {
-							table.getColumn("projectPhase")?.setFilterValue(value);
-						}
-					}}
-				>
-					<SelectTrigger className="w-full sm:w-40">
-						<SelectValue placeholder="Phase" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All Phases</SelectItem>
-						<SelectItem value="Planning">Planning</SelectItem>
-						<SelectItem value="Design">Design</SelectItem>
-						<SelectItem value="Construction">Construction</SelectItem>
-						<SelectItem value="Commissioning">Commissioning</SelectItem>
-						<SelectItem value="Operations">Operations</SelectItem>
-					</SelectContent>
-				</Select>
-				<Select
-					value={
 						(table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all"
 					}
 					onValueChange={(value) => {
@@ -467,10 +546,14 @@ export function ProjectsListClient() {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All Statuses</SelectItem>
-						<SelectItem value="Active">Active</SelectItem>
-						<SelectItem value="On Hold">On Hold</SelectItem>
+						<SelectItem value="Closeable">Closeable</SelectItem>
+						<SelectItem value="Verbal">Verbal</SelectItem>
+						<SelectItem value="Before Start">Before Start</SelectItem>
+						<SelectItem value="In Progress">In Progress</SelectItem>
 						<SelectItem value="Completed">Completed</SelectItem>
 						<SelectItem value="Cancelled">Cancelled</SelectItem>
+						<SelectItem value="Closed">Closed</SelectItem>
+						<SelectItem value="Unknown">Unknown</SelectItem>
 					</SelectContent>
 				</Select>
 				<Select
@@ -531,58 +614,89 @@ export function ProjectsListClient() {
 							return (
 								<Card
 									key={row.id}
-									className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 flex flex-col"
+									className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 flex flex-col overflow-hidden py-0 gap-0"
 									onClick={() => handleRowClick(item)}
 								>
 									<div className="flex-1 flex flex-col">
-										<CardHeader className="pb-3 flex-shrink-0">
-											<div className="flex items-start justify-between gap-2">
-												<CardTitle className="text-base leading-tight line-clamp-2">
-													{item.projectName || "Unknown Project"}
-												</CardTitle>
-												{item.projectStatus && (
-													<span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 ${getStatusColor(item.projectStatus)}`}>
-														{item.projectStatus}
+										<div className="p-4 space-y-3">
+											{/* Header Section */}
+											<div className="space-y-1.5">
+												<div className="flex items-start justify-between gap-2">
+													<CardTitle className="text-base font-semibold leading-tight line-clamp-2 pr-2">
+														{item.projectName || "Unknown Project"}
+													</CardTitle>
+												</div>
+											</div>
+
+											{/* Info Grid */}
+											<div className="grid gap-2 text-sm text-muted-foreground pt-1">
+												<div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+													<Ship className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+													<span className="break-words">
+														{item.assetName || "Unknown Rig"}
+														{item.assetType && (
+															<span className="text-muted-foreground/70"> • {item.assetType}</span>
+														)}
 													</span>
+												</div>
+												{item.projectStatus && (
+													<div className="flex items-center gap-2">
+														<Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+														<span className="text-sm">{item.projectStatus}</span>
+														<span className={`h-2 w-2 rounded-full flex-shrink-0 ${getStatusDotColor(item.projectStatus)}`} />
+													</div>
+												)}
+												{(item.projectStartDate || item.projectEndDate) && (
+													<div className="flex items-center gap-2">
+														<Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+														<span className="truncate">
+															{item.projectStartDate ? new Date(item.projectStartDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "?"}
+															{" - "}
+															{item.projectEndDate ? new Date(item.projectEndDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "?"}
+														</span>
+													</div>
 												)}
 											</div>
-											<CardDescription className="text-sm">
-												{item.assetName || "Unknown Rig"}
-												{item.assetType && (
-													<>
-														{" • "}
-														<span className="text-muted-foreground">{item.assetType}</span>
-													</>
-												)}
-											</CardDescription>
-										</CardHeader>
-										<CardContent className="pb-3 flex-1">
-											{item.projectPhase && (
-												<div className="text-sm text-muted-foreground mb-3">
-													Phase: <span className="font-medium text-foreground">{item.projectPhase}</span>
+										</div>
+
+										{/* Metrics Bar */}
+										<div className="mt-auto border-t bg-muted/30 p-3 space-y-3">
+											{/* Overall Completion */}
+											{item.projectReadinessScore !== null && item.projectReadinessScore !== undefined && (
+												<div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/50">
+													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider col-span-2 self-center">
+														Overall Readiness
+													</span>
+													<CompletionBadge value={item.projectReadinessScore} />
 												</div>
 											)}
-											<div className="space-y-2">
-												<div className="flex items-center justify-between text-xs">
-													<span className="text-muted-foreground">RAPTOR</span>
+											
+											{/* Individual Metrics */}
+											<div className="grid grid-cols-3 gap-2">
+												<div className="flex flex-col gap-1">
+													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
 													<CompletionBadge value={item.raptor_checklist_completion} />
 												</div>
-												<div className="flex items-center justify-between text-xs">
-													<span className="text-muted-foreground">SIT</span>
+												<div className="flex flex-col gap-1">
+													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
 													<CompletionBadge value={item.sit_completion} />
 												</div>
-												<div className="flex items-center justify-between text-xs">
-													<span className="text-muted-foreground">Doc</span>
+												<div className="flex flex-col gap-1">
+													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
 													<CompletionBadge value={item.doc_verification_completion} />
 												</div>
 											</div>
-										</CardContent>
-									</div>
-									<CardFooter className="pt-3 border-t flex-shrink-0">
-										<div className="text-sm text-muted-foreground">
-											<span className="font-medium text-foreground">{item.checklist_remaining ?? 0}</span> items remaining
 										</div>
-									</CardFooter>
+									</div>
+									
+									{/* Footer Status */}
+									<div className="bg-muted/50 px-3 py-2 border-t flex items-center justify-between text-xs text-muted-foreground mt-auto">
+										<div className="flex items-center gap-1.5">
+											<ListTodo className="h-3.5 w-3.5" />
+											<span className="font-medium text-foreground">{item.checklist_remaining ?? 0}</span>
+											<span>items remaining</span>
+										</div>
+									</div>
 								</Card>
 							);
 						})

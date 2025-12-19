@@ -3,6 +3,7 @@ import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
 import { db, ProjectAssets, Projects, Assets } from "../db";
 import { ProjectAssetSortBySchema, SortOrderSchema } from "../shared/project-assets";
+import { ProjectStatusSchema } from "../db/schemas/filemaker/generated/Projects";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -14,8 +15,7 @@ const listProjectAssetsInput = z.object({
 
 const listDetailedInput = z.object({
   search: z.string().optional(),
-  phase: z.string().optional(),
-  status: z.string().optional(),
+  status: ProjectStatusSchema.optional(),
   assetType: z.string().optional(),
   sortBy: ProjectAssetSortBySchema.optional(),
   sortOrder: SortOrderSchema.default("asc"),
@@ -43,9 +43,11 @@ export const projectAssetDetailedItemSchema = z.object({
   // Enriched fields from related data
   projectName: z.string().nullable().optional(),
   projectRegion: z.string().nullable().optional(),
-  projectPhase: z.string().nullable().optional(),
-  projectStatus: z.string().nullable().optional(),
+  projectStatus: ProjectStatusSchema.nullable().optional(),
   projectOverallCompletion: z.number().nullable().optional(),
+  projectReadinessScore: z.number().nullable().optional(),
+  projectStartDate: z.string().nullable().optional(),
+  projectEndDate: z.string().nullable().optional(),
   assetName: z.string().nullable().optional(),
   assetType: z.string().nullable().optional(),
   assetLocation: z.string().nullable().optional(),
@@ -195,9 +197,11 @@ export const projectAssetsRouter = {
           p.select({
             name: Projects.name,
             region: Projects.region,
-            phase: Projects.phase,
             status: Projects.status,
             overall_completion: Projects.overall_completion,
+            readiness_score: Projects.readiness_score,
+            start_date: Projects.start_date,
+            end_date: Projects.end_date,
           })
         )
         .expand(Assets, (a) =>
@@ -220,9 +224,11 @@ export const projectAssetsRouter = {
 
         let projectName: string | null = null;
         let projectRegion: string | null = null;
-        let projectPhase: string | null = null;
         let projectStatus: string | null = null;
         let projectOverallCompletion: number | null = null;
+        let projectReadinessScore: number | null = null;
+        let projectStartDate: string | null = null;
+        let projectEndDate: string | null = null;
         let assetName: string | null = null;
         let assetType: string | null = null;
         let assetLocation: string | null = null;
@@ -231,9 +237,11 @@ export const projectAssetsRouter = {
           const project = projectArray[0];
           projectName = project?.name ?? null;
           projectRegion = project?.region ?? null;
-          projectPhase = project?.phase ?? null;
           projectStatus = project?.status ?? null;
           projectOverallCompletion = project?.overall_completion ?? null;
+          projectReadinessScore = project?.readiness_score ?? null;
+          projectStartDate = project?.start_date ?? null;
+          projectEndDate = project?.end_date ?? null;
         }
 
         if (Array.isArray(assetArray) && assetArray.length > 0) {
@@ -250,9 +258,11 @@ export const projectAssetsRouter = {
           ...projectAssetItem,
           projectName,
           projectRegion,
-          projectPhase,
           projectStatus,
           projectOverallCompletion,
+          projectReadinessScore,
+          projectStartDate,
+          projectEndDate,
           assetName,
           assetType,
           assetLocation,
@@ -266,12 +276,6 @@ export const projectAssetsRouter = {
           (item) =>
             item.projectName?.toLowerCase().includes(searchLower) ||
             item.assetName?.toLowerCase().includes(searchLower)
-        );
-      }
-
-      if (input.phase) {
-        enrichedData = enrichedData.filter(
-          (item) => item.projectPhase === input.phase
         );
       }
 
