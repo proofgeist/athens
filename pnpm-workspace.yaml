@@ -2,7 +2,7 @@ packages:
   - apps/*
   - packages/*
 catalog:
-  next: ^16.0.7
+  next: ^16.0.10
   "@orpc/server": ^1.10.0
   "@orpc/client": ^1.10.0
   "@orpc/openapi": ^1.10.0
