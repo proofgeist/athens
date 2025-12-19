@@ -32,6 +32,21 @@ const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
+function getSidebarStateFromCookie(): boolean | null {
+  if (typeof document === "undefined") {
+    return null
+  }
+  const cookies = document.cookie.split(";")
+  const sidebarCookie = cookies.find((cookie) =>
+    cookie.trim().startsWith(`${SIDEBAR_COOKIE_NAME}=`)
+  )
+  if (sidebarCookie) {
+    const value = sidebarCookie.split("=")[1]?.trim()
+    return value === "true"
+  }
+  return null
+}
+
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
   open: boolean
@@ -71,7 +86,18 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
+  // Initialize with defaultOpen, then sync from cookie after mount (to handle SSR)
   const [_open, _setOpen] = React.useState(defaultOpen)
+  
+  // Sync state from cookie after mount (handles SSR where document is undefined)
+  React.useEffect(() => {
+    const cookieValue = getSidebarStateFromCookie()
+    if (cookieValue !== null) {
+      _setOpen(cookieValue)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once after mount
+  
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
