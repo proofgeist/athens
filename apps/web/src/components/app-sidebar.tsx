@@ -36,12 +36,6 @@ const navItems: NavItem[] = [
 		url: "/projects",
 		icon: FolderKanban,
 	},
-	{
-		title: "Action Items",
-		url: "/action-items",
-		icon: ClipboardList,
-	},
-	// Hidden secret: API Routes accessible at /routes but not shown in sidebar
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

@@ -1,5 +1,6 @@
 import { nextCookies } from 'better-auth/next-js';
 import { betterAuth } from "better-auth";
+import { organization } from "better-auth/plugins";
 import { FileMakerAdapter } from "@proofkit/better-auth";
 
 export const auth = betterAuth({
@@ -15,5 +16,17 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [nextCookies()],
+  plugins: [
+    nextCookies(),
+    organization({
+      schema: {
+        organization: {
+          modelName: "customer", // Override with your FileMaker table name
+        },
+        member: {
+          modelName: "organizationMember", // Override with your FileMaker table name
+        },
+      },
+    }),
+  ],
 });

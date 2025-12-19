@@ -50,17 +50,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 							orientation="vertical"
 							className="mr-2 data-[orientation=vertical]:h-4"
 						/>
+						{pageTitle && (
+							<span className="text-sm font-medium">{pageTitle}</span>
+						)}
 					</div>
 					<div className="flex items-center gap-2">
-						{pageTitle && (
-							<>
-								<span className="text-sm font-medium">{pageTitle}</span>
-								<Separator
-									orientation="vertical"
-									className="mx-2 data-[orientation=vertical]:h-4"
-								/>
-							</>
-						)}
 						<ModeToggle />
 					</div>
 				</header>

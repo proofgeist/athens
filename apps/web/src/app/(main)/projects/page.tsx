@@ -27,7 +27,7 @@ export default async function ProjectsPage() {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full">
+			<div className="flex flex-1 flex-col gap-4 p-4 h-full">
 				<div className="flex flex-1 flex-col min-h-0">
 					<ProjectsListClient />
 				</div>

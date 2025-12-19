@@ -28,10 +28,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompletionBadge } from "@/components/completion-badge";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List, Calendar, Ship, Briefcase, ListTodo } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List, Calendar, Ship, Briefcase, ListTodo, Filter, Check } from "lucide-react";
 
 type ProjectAssetItem = z.infer<typeof projectAssetDetailedItemSchema>;
 
@@ -41,6 +50,8 @@ export function ProjectsListClient() {
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [viewMode, setViewMode] = useLocalStorage<"table" | "card">("projects-view-mode", "card");
+	const [statusOpen, setStatusOpen] = useState(false);
+	const [rigTypeOpen, setRigTypeOpen] = useState(false);
 
 	// Fetch all data from server - let TanStack Table handle filtering client-side
 	const { data, isLoading } = useQuery(
@@ -518,30 +529,152 @@ export function ProjectsListClient() {
 		);
 	}
 
+	const statusFilter = (table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all";
+	const assetTypeFilter = (table.getColumn("assetType")?.getFilterValue() as string) ?? "all";
+	
+	const getStatusLabel = (value: string) => {
+		if (value === "all") return "All Statuses";
+		return value;
+	};
+	
+	const getAssetTypeLabel = (value: string) => {
+		if (value === "all") return "All Types";
+		return value;
+	};
+
+	const handleStatusFilter = (value: string) => {
+		if (value === "all") {
+			table.getColumn("projectStatus")?.setFilterValue(undefined);
+		} else {
+			table.getColumn("projectStatus")?.setFilterValue(value);
+		}
+	};
+
+	const handleAssetTypeFilter = (value: string) => {
+		if (value === "all") {
+			table.getColumn("assetType")?.setFilterValue(undefined);
+		} else {
+			table.getColumn("assetType")?.setFilterValue(value);
+		}
+	};
+
 	return (
 		<div className="flex flex-1 flex-col gap-4">
 			{/* Filters */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+			<div className="flex items-center gap-2">
 				<Input
 					placeholder="Search projects and rigs..."
 					value={globalFilter ?? ""}
 					onChange={(e) => setGlobalFilter(e.target.value)}
-					className="flex-1"
+					className="flex-1 h-9"
+					type="search"
 				/>
+				
+				{/* Mobile: Filters Menu */}
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="outline" className="sm:hidden h-9">
+							<Filter className="h-4 w-4 mr-2" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-64 max-h-[80vh] overflow-y-auto">
+						<DropdownMenuLabel>Filters</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						
+						{/* Status Collapsible Section */}
+						<Collapsible open={statusOpen} onOpenChange={setStatusOpen}>
+							<CollapsibleTrigger asChild>
+								<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center justify-between">
+									<span>Status</span>
+									<ChevronDown className={`h-4 w-4 transition-transform duration-200 ${statusOpen ? "rotate-180" : ""}`} />
+								</DropdownMenuItem>
+							</CollapsibleTrigger>
+							<CollapsibleContent>
+								<div className="px-2 py-1 space-y-1">
+									<DropdownMenuItem onClick={() => handleStatusFilter("all")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+										All Statuses
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Closeable")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Closeable" ? "opacity-100" : "opacity-0"}`} />
+										Closeable
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Verbal")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Verbal" ? "opacity-100" : "opacity-0"}`} />
+										Verbal
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Before Start")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Before Start" ? "opacity-100" : "opacity-0"}`} />
+										Before Start
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("In Progress")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "In Progress" ? "opacity-100" : "opacity-0"}`} />
+										In Progress
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Completed")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Completed" ? "opacity-100" : "opacity-0"}`} />
+										Completed
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Cancelled")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Cancelled" ? "opacity-100" : "opacity-0"}`} />
+										Cancelled
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Closed")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Closed" ? "opacity-100" : "opacity-0"}`} />
+										Closed
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleStatusFilter("Unknown")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${statusFilter === "Unknown" ? "opacity-100" : "opacity-0"}`} />
+										Unknown
+									</DropdownMenuItem>
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+						
+						<DropdownMenuSeparator />
+						
+						{/* Rig Type Collapsible Section */}
+						<Collapsible open={rigTypeOpen} onOpenChange={setRigTypeOpen}>
+							<CollapsibleTrigger asChild>
+								<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center justify-between">
+									<span>Rig Type</span>
+									<ChevronDown className={`h-4 w-4 transition-transform duration-200 ${rigTypeOpen ? "rotate-180" : ""}`} />
+								</DropdownMenuItem>
+							</CollapsibleTrigger>
+							<CollapsibleContent>
+								<div className="px-2 py-1 space-y-1">
+									<DropdownMenuItem onClick={() => handleAssetTypeFilter("all")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${assetTypeFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+										All Types
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleAssetTypeFilter("Drilling")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${assetTypeFilter === "Drilling" ? "opacity-100" : "opacity-0"}`} />
+										Drilling
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleAssetTypeFilter("Production")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${assetTypeFilter === "Production" ? "opacity-100" : "opacity-0"}`} />
+										Production
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleAssetTypeFilter("Workover")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${assetTypeFilter === "Workover" ? "opacity-100" : "opacity-0"}`} />
+										Workover
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleAssetTypeFilter("Jack-up")} className="pl-8">
+										<Check className={`h-4 w-4 mr-2 ${assetTypeFilter === "Jack-up" ? "opacity-100" : "opacity-0"}`} />
+										Jack-up
+									</DropdownMenuItem>
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+					</DropdownMenuContent>
+				</DropdownMenu>
+
+				{/* Desktop: Individual Selects */}
 				<Select
-					value={
-						(table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all"
-					}
-					onValueChange={(value) => {
-						const currentValue = (table.getColumn("projectStatus")?.getFilterValue() as string) ?? "all";
-						if (value === "all" || value === currentValue) {
-							table.getColumn("projectStatus")?.setFilterValue(undefined);
-						} else {
-							table.getColumn("projectStatus")?.setFilterValue(value);
-						}
-					}}
+					value={statusFilter}
+					onValueChange={handleStatusFilter}
 				>
-					<SelectTrigger className="w-full sm:w-40">
+					<SelectTrigger className="hidden sm:flex w-40">
 						<SelectValue placeholder="Status" />
 					</SelectTrigger>
 					<SelectContent>
@@ -557,19 +690,10 @@ export function ProjectsListClient() {
 					</SelectContent>
 				</Select>
 				<Select
-					value={
-						(table.getColumn("assetType")?.getFilterValue() as string) ?? "all"
-					}
-					onValueChange={(value) => {
-						const currentValue = (table.getColumn("assetType")?.getFilterValue() as string) ?? "all";
-						if (value === "all" || value === currentValue) {
-							table.getColumn("assetType")?.setFilterValue(undefined);
-						} else {
-							table.getColumn("assetType")?.setFilterValue(value);
-						}
-					}}
+					value={assetTypeFilter}
+					onValueChange={handleAssetTypeFilter}
 				>
-					<SelectTrigger className="w-full sm:w-40">
+					<SelectTrigger className="hidden sm:flex w-40">
 						<SelectValue placeholder="Rig Type" />
 					</SelectTrigger>
 					<SelectContent>
@@ -580,20 +704,19 @@ export function ProjectsListClient() {
 						<SelectItem value="Jack-up">Jack-up</SelectItem>
 					</SelectContent>
 				</Select>
-				<div className="flex gap-1 border rounded-md p-1">
+				
+				<div className="flex gap-1 border rounded-md p-1 h-9">
 					<Button
 						variant={viewMode === "table" ? "secondary" : "ghost"}
-						size="sm"
 						onClick={() => setViewMode("table")}
-						className="h-8 w-8 p-0"
+						className="h-7 w-7 p-0"
 					>
 						<List className="h-4 w-4" />
 					</Button>
 					<Button
 						variant={viewMode === "card" ? "secondary" : "ghost"}
-						size="sm"
 						onClick={() => setViewMode("card")}
-						className="h-8 w-8 p-0"
+						className="h-7 w-7 p-0"
 					>
 						<LayoutGrid className="h-4 w-4" />
 					</Button>
@@ -603,7 +726,7 @@ export function ProjectsListClient() {
 			{/* Table or Card View */}
 			<div className="flex-1">
 				{viewMode === "card" ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 					{table.getRowModel().rows.length === 0 ? (
 						<div className="col-span-full py-12 text-center text-muted-foreground">
 							No projects found
@@ -660,19 +783,13 @@ export function ProjectsListClient() {
 										</div>
 
 										{/* Metrics Bar */}
-										<div className="mt-auto border-t bg-muted/30 p-3 space-y-3">
-											{/* Overall Completion */}
-											{item.projectReadinessScore !== null && item.projectReadinessScore !== undefined && (
-												<div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/50">
-													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider col-span-2 self-center">
-														Overall Readiness
-													</span>
+										<div className="mt-auto border-t bg-muted/30 p-3">
+											{/* All Readiness Metrics in One Row */}
+											<div className="grid grid-cols-4 gap-2">
+												<div className="flex flex-col gap-1">
+													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Overall</span>
 													<CompletionBadge value={item.projectReadinessScore} />
 												</div>
-											)}
-											
-											{/* Individual Metrics */}
-											<div className="grid grid-cols-3 gap-2">
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
 													<CompletionBadge value={item.raptor_checklist_completion} />
