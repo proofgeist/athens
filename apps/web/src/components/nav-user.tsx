@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Bell, ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -103,16 +103,8 @@ export function NavUser({
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
 							<DropdownMenuItem>
-								<BadgeCheck className="mr-2 h-4 w-4" />
-								Account
-							</DropdownMenuItem>
-							<DropdownMenuItem>
 								<Settings className="mr-2 h-4 w-4" />
 								Settings
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<Bell className="mr-2 h-4 w-4" />
-								Notifications
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />

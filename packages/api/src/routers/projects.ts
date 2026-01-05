@@ -2,13 +2,13 @@ import { z } from "zod";
 import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
 import { db, Projects } from "../db";
-import { ProjectStatusSchema } from "../db/schemas/filemaker/generated/Projects";
 
 // Input schemas
 const listProjectsInput = z.object({
   region: z.string().optional(),
+  phase: z.string().optional(),
   risk_level: z.string().optional(),
-  status: ProjectStatusSchema.optional(),
+  status: z.string().optional(),
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
 });
@@ -22,11 +22,12 @@ export const projectsRouter = {
   list: protectedProcedure
     .input(listProjectsInput)
     .handler(async ({ input }) => {
-      const { region, risk_level, status, limit, offset } = input;
+      const { region, phase, risk_level, status, limit, offset } = input;
 
       // Build filters
       const filters = [];
       if (region) filters.push(eq(Projects.region, region));
+      if (phase) filters.push(eq(Projects.phase, phase));
       if (risk_level) filters.push(eq(Projects.risk_level, risk_level));
       if (status) filters.push(eq(Projects.status, status));
 

@@ -290,7 +290,3 @@ flowchart TB
 
 - Option A: Read directly from backend via MCP during development, map to dev schema later
 - Option B: Seed dev database with representative sample data for demo
-
-3. **SmartList Type Field**: Add to existing SmartList OR create separate ActionItems table?
-
----
