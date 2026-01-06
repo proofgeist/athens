@@ -3,7 +3,7 @@ import { eq, and } from "@proofkit/fmodata";
 import { protectedProcedure } from "../index";
 import { db, ProjectAssets, Projects, Assets } from "../db";
 import { ProjectAssetSortBySchema, SortOrderSchema } from "../shared/project-assets";
-import { ProjectStatusSchema } from "../db/schemas/filemaker/generated/Projects";
+import { ProjectStatusSchema } from "../schemas/Projects";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -32,20 +32,30 @@ export const projectAssetDetailedItemSchema = z.object({
   id: z.string().nullable(),
   project_id: z.string().nullable(),
   asset_id: z.string().nullable(),
-  raptor_checklist_completion: z.number().nullable(),
-  sit_completion: z.number().nullable(),
-  doc_verification_completion: z.number().nullable(),
+  // Completion percentages
+  overall_completion: z.number().nullable(),
+  checklist_percent: z.number().nullable(),
+  sit_percent: z.number().nullable(),
+  doc_percent: z.number().nullable(),
+  // Checklist counts
+  checklist_total: z.number().nullable(),
   checklist_remaining: z.number().nullable(),
   checklist_closed: z.number().nullable(),
   checklist_non_conforming: z.number().nullable(),
   checklist_not_applicable: z.number().nullable(),
   checklist_deferred: z.number().nullable(),
+  // SIT counts
+  sit_total: z.number().nullable(),
+  sit_remaining: z.number().nullable(),
+  sit_closed: z.number().nullable(),
+  // Doc counts
+  doc_total: z.number().nullable(),
+  doc_remaining: z.number().nullable(),
+  doc_closed: z.number().nullable(),
   // Enriched fields from related data
   projectName: z.string().nullable().optional(),
   projectRegion: z.string().nullable().optional(),
   projectStatus: ProjectStatusSchema.nullable().optional(),
-  projectOverallCompletion: z.number().nullable().optional(),
-  projectReadinessScore: z.number().nullable().optional(),
   projectStartDate: z.string().nullable().optional(),
   projectEndDate: z.string().nullable().optional(),
   assetName: z.string().nullable().optional(),
@@ -104,6 +114,82 @@ export const projectAssetsRouter = {
       return result.data;
     }),
 
+  getDetailById: protectedProcedure
+    .input(getProjectAssetByIdInput)
+    .output(projectAssetDetailedItemSchema)
+    .handler(async ({ input }) => {
+      const result = await db
+        .from(ProjectAssets)
+        .list()
+        .where(eq(ProjectAssets.id, input.id))
+        .expand(Projects, (p) =>
+          p.select({
+            name: Projects.name,
+            region: Projects.region,
+            status: Projects.status,
+            start_date: Projects.start_date,
+            end_date: Projects.end_date,
+          })
+        )
+        .expand(Assets, (a) =>
+          a.select({
+            name: Assets.name,
+            type: Assets.type,
+            location: Assets.location,
+          })
+        )
+        .single()
+        .execute();
+
+      if (result.error || !result.data) {
+        throw new Error(`ProjectAsset not found: ${input.id}`);
+      }
+
+      const item = result.data;
+      const projectArray = item.Projects;
+      const assetArray = item.Assets;
+
+      let projectName: string | null = null;
+      let projectRegion: string | null = null;
+      let projectStatus: string | null = null;
+      let projectStartDate: string | null = null;
+      let projectEndDate: string | null = null;
+      let assetName: string | null = null;
+      let assetType: string | null = null;
+      let assetLocation: string | null = null;
+
+      if (Array.isArray(projectArray) && projectArray.length > 0) {
+        const project = projectArray[0];
+        projectName = project?.name ?? null;
+        projectRegion = project?.region ?? null;
+        projectStatus = project?.status ?? null;
+        projectStartDate = project?.start_date ?? null;
+        projectEndDate = project?.end_date ?? null;
+      }
+
+      if (Array.isArray(assetArray) && assetArray.length > 0) {
+        const asset = assetArray[0];
+        assetName = asset?.name ?? null;
+        assetType = asset?.type ?? null;
+        assetLocation = asset?.location ?? null;
+      }
+
+      // Extract only the ProjectAssets fields, excluding expanded arrays
+      const { Projects: _, Assets: __, ...projectAssetItem } = item;
+
+      return projectAssetDetailedItemSchema.parse({
+        ...projectAssetItem,
+        projectName,
+        projectRegion,
+        projectStatus,
+        projectStartDate,
+        projectEndDate,
+        assetName,
+        assetType,
+        assetLocation,
+      });
+    }),
+
   // Get summary stats for dashboard
   getSummaryStats: protectedProcedure.handler(async () => {
     const result = await db.from(ProjectAssets).list().top(1000).execute();
@@ -126,9 +212,9 @@ export const projectAssetsRouter = {
     let sumDoc = 0;
 
     for (const pa of data) {
-      sumRaptor += pa.raptor_checklist_completion ?? 0;
-      sumSit += pa.sit_completion ?? 0;
-      sumDoc += pa.doc_verification_completion ?? 0;
+      sumRaptor += pa.checklist_percent ?? 0;
+      sumSit += pa.sit_percent ?? 0;
+      sumDoc += pa.doc_percent ?? 0;
     }
 
     const avgCompletion = sumRaptor / (total || 1);
@@ -172,9 +258,9 @@ export const projectAssetsRouter = {
         asset_id: item.asset_id,
         projectName,
         assetName,
-        raptor_checklist_completion: item.raptor_checklist_completion ?? 0,
-        sit_completion: item.sit_completion ?? 0,
-        doc_verification_completion: item.doc_verification_completion ?? 0,
+        checklist_percent: item.checklist_percent ?? 0,
+        sit_percent: item.sit_percent ?? 0,
+        doc_percent: item.doc_percent ?? 0,
       };
     });
 
@@ -198,8 +284,6 @@ export const projectAssetsRouter = {
             name: Projects.name,
             region: Projects.region,
             status: Projects.status,
-            overall_completion: Projects.overall_completion,
-            readiness_score: Projects.readiness_score,
             start_date: Projects.start_date,
             end_date: Projects.end_date,
           })
@@ -225,8 +309,6 @@ export const projectAssetsRouter = {
         let projectName: string | null = null;
         let projectRegion: string | null = null;
         let projectStatus: string | null = null;
-        let projectOverallCompletion: number | null = null;
-        let projectReadinessScore: number | null = null;
         let projectStartDate: string | null = null;
         let projectEndDate: string | null = null;
         let assetName: string | null = null;
@@ -238,8 +320,6 @@ export const projectAssetsRouter = {
           projectName = project?.name ?? null;
           projectRegion = project?.region ?? null;
           projectStatus = project?.status ?? null;
-          projectOverallCompletion = project?.overall_completion ?? null;
-          projectReadinessScore = project?.readiness_score ?? null;
           projectStartDate = project?.start_date ?? null;
           projectEndDate = project?.end_date ?? null;
         }
@@ -259,8 +339,6 @@ export const projectAssetsRouter = {
           projectName,
           projectRegion,
           projectStatus,
-          projectOverallCompletion,
-          projectReadinessScore,
           projectStartDate,
           projectEndDate,
           assetName,
@@ -307,16 +385,16 @@ export const projectAssetsRouter = {
               bVal = b.assetName?.toLowerCase() ?? "";
               break;
             case "raptor":
-              aVal = a.raptor_checklist_completion ?? 0;
-              bVal = b.raptor_checklist_completion ?? 0;
+              aVal = a.checklist_percent ?? 0;
+              bVal = b.checklist_percent ?? 0;
               break;
             case "sit":
-              aVal = a.sit_completion ?? 0;
-              bVal = b.sit_completion ?? 0;
+              aVal = a.sit_percent ?? 0;
+              bVal = b.sit_percent ?? 0;
               break;
             case "doc":
-              aVal = a.doc_verification_completion ?? 0;
-              bVal = b.doc_verification_completion ?? 0;
+              aVal = a.doc_percent ?? 0;
+              bVal = b.doc_percent ?? 0;
               break;
             case "remaining":
               aVal = a.checklist_remaining ?? 0;

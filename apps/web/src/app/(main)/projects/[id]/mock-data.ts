@@ -1,29 +1,7 @@
+// Mock data for parts of the dashboard that don't have backend fields yet
+// Note: Circular progress indicators, checklist status, and header info now come from API
 export const mockProjectAsset = {
-  // Header info
-  projectName: "DEEPWATER ATLAS - Q4 2024 RAPTOR Review",
-  assetName: "Deepwater Atlas",
-  assetType: "Drillship",
-  projectStatus: "In Progress",
-  projectStartDate: "2024-09-15",
-  projectEndDate: "2024-12-20",
-  
-  // Four main progress indicators (Row 1)
-  overallReadiness: 72,
-  raptorChecklistCompletion: 68,
-  sitCompletion: 45,
-  docVerificationCompletion: 81,
-  
-  // Checklist status counts (Row 2, Chart 1)
-  checklistStatus: {
-    remaining: 127,
-    closed: 284,
-    nonConforming: 18,
-    notApplicable: 42,
-    deferred: 12,
-    total: 483,
-  },
-  
-  // Action item status (Row 2, Chart 2)
+  // Action item status (Row 2, Chart 2) - TODO: Add backend fields for this
   actionItemStatus: {
     highOpen: 5,
     highClosed: 12,
@@ -33,7 +11,7 @@ export const mockProjectAsset = {
     lowClosed: 67,
   },
   
-  // Action item by milestone (Row 2, Chart 3)
+  // Action item by milestone (Row 2, Chart 3) - TODO: Add backend fields for this
   actionItemsByMilestone: [
     { milestone: "Pre-Arrival", open: 2, closed: 18 },
     { milestone: "Phase 1", open: 8, closed: 34 },
@@ -41,7 +19,7 @@ export const mockProjectAsset = {
     { milestone: "Phase 3", open: 14, closed: 40 },
   ],
   
-  // System progress (Row 3)
+  // System progress (Row 3) - TODO: Add backend fields for these per-system breakdowns
   systemProgress: {
     docVerification: [
       { system: "SSH&E", progress: 95 },

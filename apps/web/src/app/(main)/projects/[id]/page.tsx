@@ -7,41 +7,66 @@ import { CircularProgress } from "@/components/charts/circular-progress";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
 import { GroupedBarChart } from "@/components/charts/grouped-bar-chart";
 import { SystemProgressList } from "@/components/charts/system-progress-list";
+import { Loader } from "@/components/loader";
+import { trpc } from "@/lib/trpc/client";
 import { mockProjectAsset } from "./mock-data";
 
-export default function ProjectDetailPage() {
-  const data = mockProjectAsset;
+export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const { data: projectAsset, isLoading, error } = trpc.projectAssets.getDetailById.useQuery({ id: params.id });
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-6">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (error || !projectAsset) {
+    return (
+      <div className="container mx-auto px-6 py-6">
+        <div className="text-center text-muted-foreground">
+          <p>Project asset not found</p>
+          <Link href="/projects" className="text-primary hover:underline mt-4 inline-block">
+            Back to Projects
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const data = projectAsset;
 
   // Prepare checklist status data for horizontal bar chart
   const checklistStatusData = [
-    { name: "Remaining", value: data.checklistStatus.remaining, color: "hsl(221, 83%, 53%)" },
-    { name: "Closed", value: data.checklistStatus.closed, color: "hsl(142, 76%, 36%)" },
-    { name: "Non-Conforming", value: data.checklistStatus.nonConforming, color: "hsl(0, 84%, 60%)" },
-    { name: "Not Applicable", value: data.checklistStatus.notApplicable, color: "hsl(var(--muted-foreground))" },
-    { name: "Deferred", value: data.checklistStatus.deferred, color: "hsl(48, 96%, 53%)" },
+    { name: "Remaining", value: data.checklist_remaining ?? 0, color: "hsl(221, 83%, 53%)" },
+    { name: "Closed", value: data.checklist_closed ?? 0, color: "hsl(142, 76%, 36%)" },
+    { name: "Non-Conforming", value: data.checklist_non_conforming ?? 0, color: "hsl(0, 84%, 60%)" },
+    { name: "Not Applicable", value: data.checklist_not_applicable ?? 0, color: "hsl(var(--muted-foreground))" },
+    { name: "Deferred", value: data.checklist_deferred ?? 0, color: "hsl(48, 96%, 53%)" },
   ];
 
-  // Prepare action item status by priority data
+  // Prepare action item status by priority data (using mock data for now)
   const actionItemsByPriority = [
     {
       name: "High",
-      open: data.actionItemStatus.highOpen,
-      closed: data.actionItemStatus.highClosed,
+      open: mockProjectAsset.actionItemStatus.highOpen,
+      closed: mockProjectAsset.actionItemStatus.highClosed,
     },
     {
       name: "Medium",
-      open: data.actionItemStatus.mediumOpen,
-      closed: data.actionItemStatus.mediumClosed,
+      open: mockProjectAsset.actionItemStatus.mediumOpen,
+      closed: mockProjectAsset.actionItemStatus.mediumClosed,
     },
     {
       name: "Low",
-      open: data.actionItemStatus.lowOpen,
-      closed: data.actionItemStatus.lowClosed,
+      open: mockProjectAsset.actionItemStatus.lowOpen,
+      closed: mockProjectAsset.actionItemStatus.lowClosed,
     },
   ];
 
-  // Prepare action items by milestone data
-  const actionItemsByMilestone = data.actionItemsByMilestone.map((item) => ({
+  // Prepare action items by milestone data (using mock data for now)
+  const actionItemsByMilestone = mockProjectAsset.actionItemsByMilestone.map((item) => ({
     name: item.milestone,
     open: item.open,
     closed: item.closed,
@@ -76,15 +101,17 @@ export default function ProjectDetailPage() {
         </Link>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">{data.projectName}</h1>
+          <h1 className="text-3xl font-bold">{data.projectName || "Project Details"}</h1>
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Ship className="h-4 w-4" />
-              <span>
-                {data.assetName}
-                {data.assetType && <span className="text-muted-foreground/70"> • {data.assetType}</span>}
-              </span>
-            </div>
+            {data.assetName && (
+              <div className="flex items-center gap-2">
+                <Ship className="h-4 w-4" />
+                <span>
+                  {data.assetName}
+                  {data.assetType && <span className="text-muted-foreground/70"> • {data.assetType}</span>}
+                </span>
+              </div>
+            )}
             {data.projectStatus && (
               <div className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
@@ -122,22 +149,22 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <CircularProgress value={data.overallReadiness} label="Overall Readiness" />
+            <CircularProgress value={data.overall_completion ?? 0} label="Overall Readiness" />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <CircularProgress value={data.raptorChecklistCompletion} label="RAPTOR Checklist" />
+            <CircularProgress value={data.checklist_percent ?? 0} label="RAPTOR Checklist" />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <CircularProgress value={data.sitCompletion} label="SIT Completion" />
+            <CircularProgress value={data.sit_percent ?? 0} label="SIT Completion" />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <CircularProgress value={data.docVerificationCompletion} label="Doc Verification" />
+            <CircularProgress value={data.doc_percent ?? 0} label="Doc Verification" />
           </CardContent>
         </Card>
       </div>
@@ -182,7 +209,7 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
-      {/* Row 3: Three System Progress Lists */}
+      {/* Row 3: Three System Progress Lists (using mock data for now) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
@@ -191,7 +218,7 @@ export default function ProjectDetailPage() {
           <CardContent>
             <SystemProgressList
               title="Doc Verification"
-              items={data.systemProgress.docVerification}
+              items={mockProjectAsset.systemProgress.docVerification}
             />
           </CardContent>
         </Card>
@@ -202,7 +229,7 @@ export default function ProjectDetailPage() {
           <CardContent>
             <SystemProgressList
               title="Checklist"
-              items={data.systemProgress.checklist}
+              items={mockProjectAsset.systemProgress.checklist}
             />
           </CardContent>
         </Card>
@@ -213,7 +240,7 @@ export default function ProjectDetailPage() {
           <CardContent>
             <SystemProgressList
               title="SIT"
-              items={data.systemProgress.sit}
+              items={mockProjectAsset.systemProgress.sit}
             />
           </CardContent>
         </Card>
