@@ -1,0 +1,24 @@
+{
+  "$schema": "https://proofkit.dev/typegen-config-schema.json",
+  "config": [
+    {
+      "type": "fmodata",
+      "path": "schema",
+      "reduceMetadata": false,
+      "clearOldFiles": false,
+      "alwaysOverrideFieldNames": true,
+      "tables": [
+        {
+          "tableName": "ProjectAssets"
+        },
+        {
+          "tableName": "Projects"
+        },
+        {
+          "tableName": "Assets"
+        }
+      ],
+      "includeAllFieldsByDefault": true
+    }
+  ]
+}
