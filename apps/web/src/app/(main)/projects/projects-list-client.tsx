@@ -17,7 +17,7 @@ import {
 } from "@tanstack/react-table";
 import { orpc } from "@/utils/orpc";
 import { projectAssetDetailedItemSchema } from "@athens/api/routers/projectAssets";
-import { ProjectStatusSchema } from "@athens/api/db/schemas/filemaker/generated/Projects";
+import { ProjectStatusSchema } from "@athens/api/schemas/Projects";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,9 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompletionBadge } from "@/components/completion-badge";
+import { CircularProgress } from "@/components/charts/circular-progress";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List, Calendar, Ship, Briefcase, ListTodo, Filter, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown, LayoutGrid, List, Calendar, Ship, Briefcase, Filter, Check } from "lucide-react";
 
 type ProjectAssetItem = z.infer<typeof projectAssetDetailedItemSchema>;
 
@@ -741,18 +742,26 @@ export function ProjectsListClient() {
 									onClick={() => handleRowClick(item)}
 								>
 									<div className="flex-1 flex flex-col">
-										<div className="p-4 space-y-3">
+										<div className="p-4 space-y-3 relative">
 											{/* Header Section */}
-											<div className="space-y-1.5">
-												<div className="flex items-start justify-between gap-2">
-													<CardTitle className="text-base font-semibold leading-tight line-clamp-2 pr-2">
-														{item.projectName || "Unknown Project"}
-													</CardTitle>
-												</div>
+											<div className="space-y-1.5 pr-[120px]">
+												<CardTitle className="text-base font-semibold leading-tight line-clamp-2">
+													{item.projectName || "Unknown Project"}
+												</CardTitle>
+											</div>
+
+											{/* Circular Progress - Absolute Positioned */}
+											<div className="absolute top-4 right-4">
+												<CircularProgress 
+													value={item.overall_completion ?? 0} 
+													label={`Overall\nReadiness`}
+													size="sm"
+													labelInside={true}
+												/>
 											</div>
 
 											{/* Info Grid */}
-											<div className="grid gap-2 text-sm text-muted-foreground pt-1">
+											<div className="grid gap-2 text-sm text-muted-foreground pr-[120px]">
 												<div className="flex items-start gap-1.5 text-sm text-muted-foreground">
 													<Ship className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
 													<span className="break-words">
@@ -784,34 +793,30 @@ export function ProjectsListClient() {
 
 										{/* Metrics Bar */}
 										<div className="mt-auto border-t bg-muted/30 p-3">
-											{/* All Readiness Metrics in One Row */}
-											<div className="grid grid-cols-4 gap-2">
-												<div className="flex flex-col gap-1">
-													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Overall</span>
-													<CompletionBadge value={item.overall_completion} />
-												</div>
+											{/* Readiness Metrics in One Row */}
+											<div className="grid grid-cols-3 gap-3">
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
 													<CompletionBadge value={item.checklist_percent} />
+													<span className="text-[10px] text-muted-foreground mt-0.5">
+														{item.checklist_remaining ?? 0} Items Remaining
+													</span>
 												</div>
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
 													<CompletionBadge value={item.sit_percent} />
+													<span className="text-[10px] text-muted-foreground mt-0.5">
+														{item.sit_remaining ?? 0} Tests Remaining
+													</span>
 												</div>
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
 													<CompletionBadge value={item.doc_percent} />
+													<span className="text-[10px] text-muted-foreground mt-0.5">
+														{item.doc_remaining ?? 0} Docs Remaining
+													</span>
 												</div>
 											</div>
-										</div>
-									</div>
-									
-									{/* Footer Status */}
-									<div className="bg-muted/50 px-3 py-2 border-t flex items-center justify-between text-xs text-muted-foreground mt-auto">
-										<div className="flex items-center gap-1.5">
-											<ListTodo className="h-3.5 w-3.5" />
-											<span className="font-medium text-foreground">{item.checklist_remaining ?? 0}</span>
-											<span>items remaining</span>
 										</div>
 									</div>
 								</Card>

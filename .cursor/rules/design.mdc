@@ -1,0 +1,715 @@
+---
+alwaysApply: true
+---
+# Design System & Theme Guidelines
+## Athens Group Inspired Color Palette
+
+This design system is inspired by the Athens Group Services website, featuring navy blue foundations with bright cyan and orange accent colors for a modern, professional aesthetic.
+
+## Design Philosophy
+
+### Core Principles
+- **Data-forward**: Prioritize clarity and readability of information
+- **Structured**: Use clear visual hierarchy and organized layouts
+- **Streamlined**: Remove unnecessary decoration, focus on function
+- **Distinctive**: Avoid generic 'AI slop' aesthetics
+- **Cohesive**: Maintain consistent visual language across all components
+- **Professional with Energy**: Balance corporate professionalism with vibrant accents
+
+### Anti-Patterns
+- Generic font families (Inter, Roboto, Arial, system fonts)
+- Purple gradients on white backgrounds
+- Cookie-cutter component patterns without context
+- Overuse of shadows and borders
+- Inconsistent spacing and alignment
+
+## Typography
+
+### Font Stack
+- **Sans**: DM Sans - Primary body and UI text
+- **Mono**: JetBrains Mono - Data, numbers, labels, code
+
+### Configuration
+```typescript
+import { DM_Sans, JetBrains_Mono } from "next/font/google";
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+```
+
+### Usage Patterns
+- **Body text**: `font-sans` (DM Sans) - default
+- **Data values**: `font-mono text-2xl tabular-nums`
+- **Section labels**: `font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground`
+- **Large numbers**: `font-mono text-4xl font-semibold tabular-nums tracking-tight`
+
+## Color Palette
+
+### Philosophy
+Navy blue foundation with bright cyan accents and orange highlights - professional yet energetic, inspired by maritime and offshore industries.
+
+### Light Mode
+
+#### Foundational Colors
+```css
+--background: oklch(0.98 0.005 240);        /* Soft blue-white */
+--foreground: oklch(0.22 0.04 240);         /* Deep navy-slate */
+--card: oklch(1 0 0);                       /* Pure white for contrast */
+--card-foreground: oklch(0.22 0.04 240);    /* Deep navy-slate */
+```
+
+#### Primary Colors (Navy Blue)
+```css
+--primary: oklch(0.32 0.08 240);            /* Deep navy blue */
+--primary-foreground: oklch(0.99 0 0);      /* White */
+```
+
+#### Secondary Colors (Cyan)
+```css
+--secondary: oklch(0.95 0.02 220);          /* Soft blue-gray background */
+--secondary-foreground: oklch(0.25 0.06 240); /* Navy text */
+```
+
+#### Accent Colors
+```css
+--accent: oklch(0.70 0.16 210);             /* Bright cyan - for interactive elements */
+--accent-foreground: oklch(0.99 0 0);       /* White */
+
+--highlight: oklch(0.65 0.18 35);           /* Vibrant orange - CTAs and emphasis */
+--highlight-foreground: oklch(0.99 0 0);    /* White */
+```
+
+#### Muted Colors
+```css
+--muted: oklch(0.95 0.01 240);              /* Soft blue-gray */
+--muted-foreground: oklch(0.52 0.03 240);   /* Medium slate */
+```
+
+#### Border & Utility
+```css
+--border: oklch(0.88 0.02 240);             /* Subtle blue-gray */
+--input: oklch(0.88 0.02 240);              /* Input borders */
+--ring: oklch(0.32 0.08 240);               /* Focus ring - primary navy */
+```
+
+### Semantic Colors
+
+```css
+--success: oklch(0.55 0.16 155);            /* Green */
+--success-foreground: oklch(0.99 0 0);      /* White */
+
+--warning: oklch(0.75 0.15 75);             /* Amber */
+--warning-foreground: oklch(0.20 0.02 260); /* Dark slate */
+
+--info: oklch(0.70 0.16 210);               /* Cyan (matches accent) */
+--info-foreground: oklch(0.99 0 0);         /* White */
+
+--destructive: oklch(0.55 0.22 25);         /* Red */
+--destructive-foreground: oklch(0.99 0 0);  /* White */
+```
+
+### Dark Mode
+
+#### Foundational Colors
+```css
+--background: oklch(0.15 0.03 240);         /* Deep navy background */
+--foreground: oklch(0.95 0.01 240);         /* Light blue-white */
+--card: oklch(0.20 0.04 240);               /* Slightly lighter navy */
+--card-foreground: oklch(0.95 0.01 240);    /* Light blue-white */
+```
+
+#### Primary Colors (Brighter Navy)
+```css
+--primary: oklch(0.50 0.12 240);            /* Lighter navy for dark mode */
+--primary-foreground: oklch(0.99 0 0);      /* White */
+```
+
+#### Secondary Colors
+```css
+--secondary: oklch(0.25 0.04 240);          /* Dark blue-gray */
+--secondary-foreground: oklch(0.90 0.02 240); /* Light text */
+```
+
+#### Accent Colors
+```css
+--accent: oklch(0.75 0.16 210);             /* Bright cyan - pops on dark */
+--accent-foreground: oklch(0.15 0.03 240);  /* Dark navy */
+
+--highlight: oklch(0.70 0.18 35);           /* Bright orange - stands out */
+--highlight-foreground: oklch(0.99 0 0);    /* White */
+```
+
+#### Muted Colors
+```css
+--muted: oklch(0.25 0.03 240);              /* Dark blue-gray */
+--muted-foreground: oklch(0.60 0.03 240);   /* Medium light slate */
+```
+
+#### Border & Utility
+```css
+--border: oklch(0.30 0.04 240);             /* Subtle lighter navy */
+--input: oklch(0.30 0.04 240);              /* Input borders */
+--ring: oklch(0.75 0.16 210);               /* Focus ring - cyan */
+```
+
+### Color Usage Guidelines
+
+#### Primary Actions (Navy)
+```tsx
+<Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+  Submit
+</Button>
+```
+
+#### Accent Actions (Cyan)
+```tsx
+<Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+  Learn More
+</Button>
+```
+
+#### Highlight Actions (Orange - CTAs)
+```tsx
+<Button className="bg-highlight text-highlight-foreground hover:bg-highlight/90">
+  Get Started
+</Button>
+```
+
+#### Subtle Emphasis
+```tsx
+<div className="bg-primary/10 text-primary border border-primary/20">
+  Info message
+</div>
+
+<div className="bg-accent/10 text-accent border border-accent/20">
+  Cyan accent area
+</div>
+```
+
+#### Interactive Icons
+- **Primary context**: `text-primary`
+- **Accent/info context**: `text-accent`
+- **Call-to-action**: `text-highlight`
+- **Muted/inactive**: `text-muted-foreground`
+
+#### Hover States
+```tsx
+hover:bg-primary/5          // Subtle primary hover
+hover:bg-accent/10          // Cyan highlight hover
+hover:border-accent/50      // Cyan border emphasis
+hover:text-highlight        // Orange text on hover
+```
+
+## Layout Patterns
+
+### Page Structure
+```tsx
+{/* Header with navy gradient */}
+<div className="border-b border-border/50 bg-gradient-to-b from-primary/5 to-background">
+  <div className="mx-auto max-w-6xl px-6 py-6">
+    {/* Header content */}
+  </div>
+</div>
+
+{/* Main content */}
+<div className="mx-auto max-w-6xl px-6 py-8">
+  {/* Content sections */}
+</div>
+```
+
+### Hero Section (Athens-inspired)
+```tsx
+<div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/90">
+  {/* Background pattern or image */}
+  <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-10" />
+  
+  <div className="relative mx-auto max-w-6xl px-6 py-24">
+    <h1 className="text-5xl font-bold text-white">
+      Your Headline
+    </h1>
+    <p className="mt-4 text-lg text-white/80">
+      Supporting description text
+    </p>
+    <Button className="mt-8 bg-highlight text-highlight-foreground hover:bg-highlight/90">
+      Get Started
+    </Button>
+  </div>
+</div>
+```
+
+### Section Headers
+```tsx
+<h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+  Section Title
+</h2>
+```
+
+### Grid Layouts
+- **Three column**: `grid gap-4 sm:grid-cols-3`
+- **Two column**: `grid gap-4 lg:grid-cols-2`
+- **Stacked**: `space-y-4`
+
+## Component Patterns
+
+### Cards
+
+#### Base Card
+```tsx
+<div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+  {/* Card content */}
+</div>
+```
+
+#### Interactive Card
+```tsx
+<div className="rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:shadow-md">
+  {/* Card content */}
+</div>
+```
+
+#### Featured Card (Navy)
+```tsx
+<div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary to-primary/90 p-6 text-white shadow-lg">
+  {/* Featured content */}
+</div>
+```
+
+### Metric Display
+```tsx
+<div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
+    {icon}
+  </div>
+  <div className="min-w-0 flex-1">
+    <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <p className="font-mono text-2xl font-semibold tabular-nums">{value}</p>
+    <p className="truncate text-[10px] text-muted-foreground/70">{sublabel}</p>
+  </div>
+</div>
+```
+
+### Action Buttons (Header Style)
+```tsx
+<button className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3.5 shadow-sm transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:shadow-md">
+  <div className="flex items-center gap-3">
+    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-foreground transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+      {icon}
+    </div>
+    <div>
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+  </div>
+  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+</button>
+```
+
+### Progress Bars
+```tsx
+<div className="relative">
+  <div className="h-3 overflow-hidden rounded-full bg-secondary">
+    <div
+      className="h-full rounded-full bg-gradient-to-r from-accent to-accent/80 transition-all duration-500"
+      style={{ width: `${progress}%` }}
+    />
+  </div>
+  {/* Milestone markers */}
+  <div className="absolute inset-x-0 top-0 flex h-3 items-center">
+    {[25, 50, 75].map((milestone) => (
+      <div
+        key={milestone}
+        className="h-3 w-px bg-background/50"
+        style={{ marginLeft: `${milestone}%` }}
+      />
+    ))}
+  </div>
+</div>
+```
+
+### Badges and Pills
+
+#### Status Badge (Primary)
+```tsx
+<span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+  Active
+</span>
+```
+
+#### Accent Badge (Cyan)
+```tsx
+<span className="rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent">
+  New
+</span>
+```
+
+#### Highlight Badge (Orange)
+```tsx
+<span className="rounded-full bg-highlight/10 px-3 py-1.5 text-sm font-medium text-highlight">
+  Featured
+</span>
+```
+
+#### Small Admin Badge
+```tsx
+<span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+  <ShieldCheck className="h-3 w-3" />
+  Admin
+</span>
+```
+
+### Icon Containers
+- **Small**: `flex h-6 w-6 items-center justify-center rounded bg-secondary text-primary`
+- **Medium**: `flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-primary`
+- **Large**: `flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-primary`
+- **Accent**: `flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent`
+- **Highlight**: `flex h-10 w-10 items-center justify-center rounded-lg bg-highlight/10 text-highlight`
+
+## Toolbar Patterns
+
+### Header
+```tsx
+<header className="sticky top-0 z-50 border-b border-border/60 bg-gradient-to-r from-card via-card to-secondary/20 backdrop-blur-sm">
+  {/* Header content */}
+</header>
+```
+
+### Navigation Button Group
+```tsx
+<div className="flex items-center gap-0.5 rounded-lg bg-secondary/50 p-0.5">
+  <Button className="h-8 w-8 rounded-md text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-30" />
+</div>
+```
+
+### Dividers
+```tsx
+<div className="hidden h-6 w-px bg-border/60 sm:block" />
+```
+
+### Dropdown Triggers
+```tsx
+<button className="h-9 gap-2 rounded-lg bg-secondary/50 px-3 font-medium transition-colors hover:bg-secondary hover:text-accent">
+  {/* Trigger content */}
+</button>
+```
+
+### Dropdown Labels
+```tsx
+<p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+  Label
+</p>
+```
+
+## Spacing System
+
+- **Container**: `mx-auto max-w-6xl px-6`
+- **Section gap**: `py-8`
+- **Card padding**: `p-6`
+- **Tight padding**: `p-4`
+- **Gap small**: `gap-2`
+- **Gap medium**: `gap-4`
+- **Gap large**: `gap-6`
+
+## Animation Patterns
+
+### Transitions
+```css
+transition-all duration-200        /* Default */
+transition-colors                  /* Color only */
+transition-transform               /* Transform only */
+```
+
+### Hover Effects
+- **Lift**: `hover:shadow-md`
+- **Slide**: `group-hover:translate-x-0.5`
+- **Color shift**: `group-hover:bg-accent group-hover:text-accent-foreground`
+- **Border glow**: `hover:border-accent/50 hover:shadow-accent/10`
+
+## Responsive Patterns
+
+### Breakpoints
+- **sm**: 640px - Show/hide secondary text
+- **lg**: 1024px - Grid column changes
+
+### Common Patterns
+```tsx
+hidden sm:block                    /* Hide on mobile */
+sm:hidden                          /* Show on mobile */
+grid gap-4 sm:grid-cols-3         /* Responsive grid */
+flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between  /* Responsive flex */
+```
+
+## Variant States
+
+```typescript
+const variantStyles = {
+  default: {
+    container: "border-border bg-card",
+    icon: "bg-secondary text-primary",
+    value: "text-foreground",
+  },
+  accent: {
+    container: "border-accent/30 bg-accent/5",
+    icon: "bg-accent/20 text-accent",
+    value: "text-accent",
+  },
+  highlight: {
+    container: "border-highlight/30 bg-highlight/5",
+    icon: "bg-highlight/20 text-highlight",
+    value: "text-highlight",
+  },
+  warning: {
+    container: "border-warning/30 bg-warning/5",
+    icon: "bg-warning/20 text-warning",
+    value: "text-warning",
+  },
+  success: {
+    container: "border-success/30 bg-success/5",
+    icon: "bg-success/20 text-success",
+    value: "text-success",
+  },
+};
+```
+
+## Special Patterns: Athens-Inspired Elements
+
+### Hero with Background Image (Like Athens Site)
+```tsx
+<div className="relative overflow-hidden bg-primary">
+  {/* Background image with overlay */}
+  <div 
+    className="absolute inset-0 bg-cover bg-center opacity-40"
+    style={{ backgroundImage: "url('/hero-image.jpg')" }}
+  />
+  <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/60" />
+  
+  {/* Content */}
+  <div className="relative mx-auto max-w-6xl px-6 py-32">
+    <h1 className="text-6xl font-bold text-white">
+      Your Headline
+    </h1>
+    <p className="mt-6 max-w-2xl text-xl text-white/90">
+      Description text that explains your value proposition
+    </p>
+    <div className="mt-10 flex gap-4">
+      <Button className="bg-highlight text-highlight-foreground hover:bg-highlight/90">
+        Primary CTA
+      </Button>
+      <Button className="border border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20">
+        Secondary Action
+      </Button>
+    </div>
+  </div>
+  
+  {/* Bottom navigation indicator */}
+  <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-3">
+    <button className="h-2 w-2 rounded-full bg-white/50 transition-all hover:bg-white" />
+    <button className="h-2 w-8 rounded-full bg-white transition-all" />
+    <button className="h-2 w-2 rounded-full bg-white/50 transition-all hover:bg-white" />
+  </div>
+</div>
+```
+
+### Service/Feature Cards (Athens Style)
+```tsx
+<div className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-xl">
+  {/* Icon/Image */}
+  <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-primary to-primary/80">
+    <div className="flex h-full items-center justify-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+        {icon}
+      </div>
+    </div>
+  </div>
+  
+  {/* Content */}
+  <div className="p-6">
+    <h3 className="text-xl font-semibold text-foreground">Service Name</h3>
+    <p className="mt-2 text-sm text-muted-foreground">
+      Brief description of the service
+    </p>
+    <Button 
+      variant="link" 
+      className="mt-4 gap-2 p-0 text-accent hover:text-accent/80"
+    >
+      Learn More
+      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+    </Button>
+  </div>
+</div>
+```
+
+### Statistics Bar (Data-Forward)
+```tsx
+<div className="grid gap-4 sm:grid-cols-3">
+  <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+    <p className="font-mono text-4xl font-bold text-accent">250+</p>
+    <p className="mt-2 text-sm font-medium text-muted-foreground">Projects Completed</p>
+  </div>
+  <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+    <p className="font-mono text-4xl font-bold text-primary">15</p>
+    <p className="mt-2 text-sm font-medium text-muted-foreground">Years Experience</p>
+  </div>
+  <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+    <p className="font-mono text-4xl font-bold text-highlight">98%</p>
+    <p className="mt-2 text-sm font-medium text-muted-foreground">Client Satisfaction</p>
+  </div>
+</div>
+```
+
+## Best Practices
+
+1. **Use font-mono for all numerical data** to ensure tabular alignment
+2. **Apply tabular-nums** to numbers that may change dynamically
+3. **Use uppercase tracking-widest** for section labels
+4. **Prefer bg-secondary/50** for subtle interactive backgrounds
+5. **Use border-border/50 or border-border/60** for softer borders
+6. **Apply group hover patterns** for parent-child interactions
+7. **Use transitions on interactive elements** for polish
+8. **Maintain consistent border-radius**: rounded-lg for buttons, rounded-xl for cards
+9. **Use cyan (accent) for informational highlights** and navigation emphasis
+10. **Reserve orange (highlight) for primary CTAs** and important actions
+11. **Navy (primary) is the foundation** - use it for headers, primary actions, and branding
+12. **Balance professional navy with energetic accents** - don't let it become too corporate
+
+## CSS Variables Setup
+
+Add to your `globals.css`:
+
+```css
+@layer base {
+  :root {
+    /* Fonts */
+    --font-sans: var(--font-dm-sans);
+    --font-mono: var(--font-jetbrains-mono);
+    
+    /* Athens-inspired Light Mode */
+    --background: oklch(0.98 0.005 240);
+    --foreground: oklch(0.22 0.04 240);
+    
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.22 0.04 240);
+    
+    --primary: oklch(0.32 0.08 240);
+    --primary-foreground: oklch(0.99 0 0);
+    
+    --secondary: oklch(0.95 0.02 220);
+    --secondary-foreground: oklch(0.25 0.06 240);
+    
+    --accent: oklch(0.70 0.16 210);
+    --accent-foreground: oklch(0.99 0 0);
+    
+    --highlight: oklch(0.65 0.18 35);
+    --highlight-foreground: oklch(0.99 0 0);
+    
+    --muted: oklch(0.95 0.01 240);
+    --muted-foreground: oklch(0.52 0.03 240);
+    
+    --border: oklch(0.88 0.02 240);
+    --input: oklch(0.88 0.02 240);
+    --ring: oklch(0.32 0.08 240);
+    
+    /* Semantic Colors */
+    --success: oklch(0.55 0.16 155);
+    --success-foreground: oklch(0.99 0 0);
+    
+    --warning: oklch(0.75 0.15 75);
+    --warning-foreground: oklch(0.20 0.02 260);
+    
+    --info: oklch(0.70 0.16 210);
+    --info-foreground: oklch(0.99 0 0);
+    
+    --destructive: oklch(0.55 0.22 25);
+    --destructive-foreground: oklch(0.99 0 0);
+    
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: oklch(0.15 0.03 240);
+    --foreground: oklch(0.95 0.01 240);
+    
+    --card: oklch(0.20 0.04 240);
+    --card-foreground: oklch(0.95 0.01 240);
+    
+    --primary: oklch(0.50 0.12 240);
+    --primary-foreground: oklch(0.99 0 0);
+    
+    --secondary: oklch(0.25 0.04 240);
+    --secondary-foreground: oklch(0.90 0.02 240);
+    
+    --accent: oklch(0.75 0.16 210);
+    --accent-foreground: oklch(0.15 0.03 240);
+    
+    --highlight: oklch(0.70 0.18 35);
+    --highlight-foreground: oklch(0.99 0 0);
+    
+    --muted: oklch(0.25 0.03 240);
+    --muted-foreground: oklch(0.60 0.03 240);
+    
+    --border: oklch(0.30 0.04 240);
+    --input: oklch(0.30 0.04 240);
+    --ring: oklch(0.75 0.16 210);
+  }
+}
+```
+
+## Tailwind Config Extension
+
+Add to your `tailwind.config.js`:
+
+```javascript
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        highlight: {
+          DEFAULT: "hsl(var(--highlight))",
+          foreground: "hsl(var(--highlight-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        // ... rest of semantic colors
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)"],
+        mono: ["var(--font-mono)"],
+      },
+    },
+  },
+};
+```
+
+---
+
+**Version**: 1.0  
+**Inspiration**: Athens Group Services website (athensgroupservices.com)  
+**Color Philosophy**: Professional navy foundation with vibrant cyan and orange accents for modern energy
+
