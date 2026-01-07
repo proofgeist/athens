@@ -4,6 +4,7 @@ import { protectedProcedure } from "../index";
 import { db, ProjectAssets, Projects, Assets } from "../db";
 import { ProjectAssetSortBySchema, SortOrderSchema } from "../shared/project-assets";
 import { ProjectStatusSchema } from "../schemas/Projects";
+import { ActionItemsJsonSchema, SystemProgressJsonSchema } from "../schemas/ProjectAssets";
 
 // Input schemas
 const listProjectAssetsInput = z.object({
@@ -52,6 +53,9 @@ export const projectAssetDetailedItemSchema = z.object({
   doc_total: z.number().nullable(),
   doc_remaining: z.number().nullable(),
   doc_closed: z.number().nullable(),
+  // JSON fields for charts
+  action_items_json: ActionItemsJsonSchema.nullable().optional(),
+  system_progress_json: SystemProgressJsonSchema.nullable().optional(),
   // Enriched fields from related data
   projectName: z.string().nullable().optional(),
   projectRegion: z.string().nullable().optional(),

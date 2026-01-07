@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { ArrowLeft, Ship, Calendar, Briefcase } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/charts/circular-progress";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
 import { GroupedBarChart } from "@/components/charts/grouped-bar-chart";
 import { SystemProgressList } from "@/components/charts/system-progress-list";
-import { Loader } from "@/components/loader";
-import { trpc } from "@/lib/trpc/client";
-import { mockProjectAsset } from "./mock-data";
+import Loader from "@/components/loader";
+import { orpc } from "@/utils/orpc";
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const { data: projectAsset, isLoading, error } = trpc.projectAssets.getDetailById.useQuery({ id: params.id });
+  const { data: projectAsset, isLoading, error } = useQuery(
+    orpc.projectAssets.getDetailById.queryOptions({ input: { id: params.id } })
+  );
 
   if (isLoading) {
     return (
@@ -46,31 +48,36 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     { name: "Deferred", value: data.checklist_deferred ?? 0, color: "hsl(48, 96%, 53%)" },
   ];
 
-  // Prepare action item status by priority data (using mock data for now)
-  const actionItemsByPriority = [
-    {
-      name: "High",
-      open: mockProjectAsset.actionItemStatus.highOpen,
-      closed: mockProjectAsset.actionItemStatus.highClosed,
-    },
-    {
-      name: "Medium",
-      open: mockProjectAsset.actionItemStatus.mediumOpen,
-      closed: mockProjectAsset.actionItemStatus.mediumClosed,
-    },
-    {
-      name: "Low",
-      open: mockProjectAsset.actionItemStatus.lowOpen,
-      closed: mockProjectAsset.actionItemStatus.lowClosed,
-    },
-  ];
+  // Prepare action item status by priority data
+  const actionItemsData = data.action_items_json;
+  const actionItemsByPriority = actionItemsData
+    ? [
+        {
+          name: "High",
+          open: actionItemsData.actionItemStatus.highOpen,
+          closed: actionItemsData.actionItemStatus.highClosed,
+        },
+        {
+          name: "Medium",
+          open: actionItemsData.actionItemStatus.mediumOpen,
+          closed: actionItemsData.actionItemStatus.mediumClosed,
+        },
+        {
+          name: "Low",
+          open: actionItemsData.actionItemStatus.lowOpen,
+          closed: actionItemsData.actionItemStatus.lowClosed,
+        },
+      ]
+    : [];
 
-  // Prepare action items by milestone data (using mock data for now)
-  const actionItemsByMilestone = mockProjectAsset.actionItemsByMilestone.map((item) => ({
-    name: item.milestone,
-    open: item.open,
-    closed: item.closed,
-  }));
+  // Prepare action items by milestone data
+  const actionItemsByMilestone = actionItemsData
+    ? actionItemsData.actionItemsByMilestone.map((item: { milestone: string; open: number; closed: number }) => ({
+        name: item.milestone,
+        open: item.open,
+        closed: item.closed,
+      }))
+    : [];
 
   // Status dot color helper
   const getStatusDotColor = (status: string) => {
@@ -209,7 +216,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </Card>
       </div>
 
-      {/* Row 3: Three System Progress Lists (using mock data for now) */}
+      {/* Row 3: Three System Progress Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
@@ -218,7 +225,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           <CardContent>
             <SystemProgressList
               title="Doc Verification"
-              items={mockProjectAsset.systemProgress.docVerification}
+              items={data.system_progress_json?.docVerification ?? []}
             />
           </CardContent>
         </Card>
@@ -229,7 +236,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           <CardContent>
             <SystemProgressList
               title="Checklist"
-              items={mockProjectAsset.systemProgress.checklist}
+              items={data.system_progress_json?.checklist ?? []}
             />
           </CardContent>
         </Card>
@@ -240,7 +247,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           <CardContent>
             <SystemProgressList
               title="SIT"
-              items={mockProjectAsset.systemProgress.sit}
+              items={data.system_progress_json?.sit ?? []}
             />
           </CardContent>
         </Card>
