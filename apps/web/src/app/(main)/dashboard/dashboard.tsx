@@ -32,35 +32,35 @@ export function DashboardStats() {
 
 	return (
 		<div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<div className="rounded-xl border bg-card p-6">
+			<div className="rounded-xl border bg-card p-6 shadow-sm">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<h3 className="text-sm font-medium">Total Projects</h3>
+					<h3 className="text-xs font-medium text-muted-foreground">Total Projects</h3>
 				</div>
-				<div className="text-2xl font-bold">{totalProjects}</div>
-				<p className="text-xs text-muted-foreground">Active project assets</p>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{totalProjects}</div>
+				<p className="text-[10px] text-muted-foreground/70">Active project assets</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6">
+			<div className="rounded-xl border bg-card p-6 shadow-sm">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<h3 className="text-sm font-medium">RAPTOR Completion</h3>
+					<h3 className="text-xs font-medium text-muted-foreground">RAPTOR Completion</h3>
 				</div>
-				<div className="text-2xl font-bold">{raptorCompletion}%</div>
-				<p className="text-xs text-muted-foreground">Average checklist completion</p>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{raptorCompletion}%</div>
+				<p className="text-[10px] text-muted-foreground/70">Average checklist completion</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6">
+			<div className="rounded-xl border bg-card p-6 shadow-sm">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<h3 className="text-sm font-medium">Open Action Items</h3>
+					<h3 className="text-xs font-medium text-muted-foreground">Open Action Items</h3>
 				</div>
-				<div className="text-2xl font-bold">{openActions}</div>
-				<p className="text-xs text-muted-foreground">Items requiring attention</p>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{openActions}</div>
+				<p className="text-[10px] text-muted-foreground/70">Items requiring attention</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6">
+			<div className="rounded-xl border bg-card p-6 shadow-sm">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<h3 className="text-sm font-medium">High Priority</h3>
+					<h3 className="text-xs font-medium text-muted-foreground">High Priority</h3>
 				</div>
-				<div className={`text-2xl font-bold ${highPriority > 0 ? "text-destructive" : ""}`}>
+				<div className={`font-mono text-2xl font-semibold tabular-nums tracking-tight ${highPriority > 0 ? "text-destructive" : ""}`}>
 					{highPriority}
 				</div>
-				<p className="text-xs text-muted-foreground">Open high-priority items</p>
+				<p className="text-[10px] text-muted-foreground/70">Open high-priority items</p>
 			</div>
 		</div>
 	);

@@ -43,7 +43,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 		<SidebarProvider>
 			<AppSidebar />
 			<SidebarInset>
-				<header className="flex h-14 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+				<header className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-gradient-to-r from-card via-card to-secondary/20 px-4 backdrop-blur-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
 					<div className="flex flex-1 items-center gap-2">
 						<SidebarTrigger className="-ml-1" />
 						<Separator

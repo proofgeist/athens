@@ -68,7 +68,7 @@ export default function SignInForm({
 	}
 
 	return (
-		<Card className="w-full max-w-md shadow-lg">
+		<Card className="w-full max-w-md border-border bg-card shadow-lg">
 			<CardHeader className="text-center">
 				<CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
 				<CardDescription>Sign in to your account to continue</CardDescription>
@@ -105,7 +105,7 @@ export default function SignInForm({
 						)}
 					</div>
 
-					<Button type="submit" className="w-full" disabled={isSubmitting}>
+					<Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
 						{isSubmitting ? "Signing in..." : "Sign In"}
 					</Button>
 				</form>
@@ -117,7 +117,7 @@ export default function SignInForm({
 					<Button
 						variant="link"
 						onClick={onSwitchToSignUp}
-						className="p-0 h-auto text-primary"
+						className="p-0 h-auto text-accent hover:text-accent/80"
 					>
 						Sign Up
 					</Button>

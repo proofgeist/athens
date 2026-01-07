@@ -18,11 +18,11 @@ const chartConfig = {
 	},
 	medium: {
 		label: "Medium",
-		color: "hsl(38, 92%, 50%)",
+		color: "hsl(var(--warning))",
 	},
 	high: {
 		label: "High",
-		color: "hsl(0, 84%, 60%)",
+		color: "hsl(var(--destructive))",
 	},
 } satisfies ChartConfig;
 

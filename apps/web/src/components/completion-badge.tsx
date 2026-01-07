@@ -3,20 +3,20 @@ export function CompletionBadge({ value }: { value: number | null | undefined })
 	const percentageValue = value != null ? (value <= 1 ? value * 100 : value) : 0;
 	const percentage = Math.round(percentageValue);
 	
-	// Color coding based on completion percentage
+	// Color coding based on completion percentage using semantic colors
 	let colorClass = "bg-muted text-muted-foreground";
 	if (percentage >= 90) {
-		colorClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+		colorClass = "bg-success/10 text-success border border-success/20";
 	} else if (percentage >= 70) {
-		colorClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+		colorClass = "bg-info/10 text-info border border-info/20";
 	} else if (percentage >= 50) {
-		colorClass = "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+		colorClass = "bg-warning/10 text-warning border border-warning/20";
 	} else if (percentage > 0) {
-		colorClass = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+		colorClass = "bg-highlight/10 text-highlight border border-highlight/20";
 	}
 
 	return (
-		<span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${colorClass}`}>
+		<span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-mono font-medium tabular-nums ${colorClass}`}>
 			{percentage}%
 		</span>
 	);

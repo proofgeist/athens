@@ -14,16 +14,16 @@ export function CircularProgress({ value, label, size = "md", labelInside = fals
   const percentageValue = value <= 1 ? value * 100 : value;
   const percentage = Math.round(percentageValue);
   
-  // Color logic matching CompletionBadge
-  let color = "hsl(var(--muted))";
+  // Color logic matching CompletionBadge - using OKLCH color values
+  let color = "oklch(0.95 0.01 240)"; // muted
   if (percentage >= 90) {
-    color = "hsl(142, 76%, 36%)"; // green
+    color = "oklch(0.55 0.16 155)"; // success - green
   } else if (percentage >= 70) {
-    color = "hsl(221, 83%, 53%)"; // blue
+    color = "oklch(0.70 0.16 210)"; // info - cyan
   } else if (percentage >= 50) {
-    color = "hsl(48, 96%, 53%)"; // yellow
+    color = "oklch(0.75 0.15 75)"; // warning - yellow
   } else if (percentage > 0) {
-    color = "hsl(25, 95%, 53%)"; // orange
+    color = "oklch(0.65 0.18 35)"; // highlight - orange
   }
 
   const data = [
@@ -53,21 +53,21 @@ export function CircularProgress({ value, label, size = "md", labelInside = fals
               dataKey="value"
             >
               <Cell fill={color} />
-              <Cell fill="hsl(var(--muted))" />
+              <Cell fill="oklch(0.95 0.01 240)" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
-          <span className={`${percentageFontSize} font-bold leading-none`}>{percentage}%</span>
+          <span className={`${percentageFontSize} font-mono font-bold leading-none tabular-nums`}>{percentage}%</span>
           {labelInside && (
-            <span className={`${labelFontSize} font-semibold text-muted-foreground uppercase tracking-wider text-center leading-[1.1] mt-1 whitespace-pre-line max-w-full`}>
+            <span className={`${labelFontSize} font-mono font-semibold text-muted-foreground uppercase tracking-wider text-center leading-[1.1] mt-1 whitespace-pre-line max-w-full`}>
               {label}
             </span>
           )}
         </div>
       </div>
       {!labelInside && (
-        <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+        <span className="text-sm font-mono font-medium text-muted-foreground uppercase tracking-wider">
           {label}
         </span>
       )}

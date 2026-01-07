@@ -515,15 +515,49 @@ export function ProjectsListClient() {
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
+				{/* Search and Filters Skeleton */}
 				<div className="flex gap-4">
 					<Skeleton className="h-10 flex-1" />
 					<Skeleton className="h-10 w-40" />
 					<Skeleton className="h-10 w-40" />
-					<Skeleton className="h-10 w-40" />
+					<Skeleton className="h-10 w-20" />
 				</div>
-				<div className="space-y-2">
-					{[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-						<Skeleton key={i} className="h-16 w-full" />
+				{/* Card Grid Skeleton */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+					{[1, 2, 3, 4, 5, 6].map((i) => (
+						<Card key={i} className="flex flex-col overflow-hidden py-0 gap-0">
+							<div className="flex-1 flex flex-col">
+								<div className="p-4 space-y-3 relative">
+									{/* Header Section Skeleton */}
+									<div className="space-y-1.5 pr-[120px]">
+										<Skeleton className="h-5 w-3/4" />
+										<Skeleton className="h-4 w-1/2" />
+									</div>
+									{/* Circular Progress Skeleton - Absolute Positioned */}
+									<div className="absolute top-4 right-4">
+										<Skeleton className="h-[110px] w-[110px] rounded-full" />
+									</div>
+									{/* Info Grid Skeleton */}
+									<div className="grid gap-2 pr-[120px]">
+										<Skeleton className="h-4 w-full" />
+										<Skeleton className="h-4 w-2/3" />
+										<Skeleton className="h-4 w-3/4" />
+									</div>
+								</div>
+								{/* Metrics Bar Skeleton */}
+								<div className="mt-auto border-t bg-muted/30 p-3">
+									<div className="grid grid-cols-3 gap-3">
+										{[1, 2, 3].map((j) => (
+											<div key={j} className="flex flex-col gap-1">
+												<Skeleton className="h-3 w-12" />
+												<Skeleton className="h-6 w-16" />
+												<Skeleton className="h-3 w-20" />
+											</div>
+										))}
+									</div>
+								</div>
+							</div>
+						</Card>
 					))}
 				</div>
 			</div>
@@ -738,7 +772,7 @@ export function ProjectsListClient() {
 							return (
 								<Card
 									key={row.id}
-									className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 flex flex-col overflow-hidden py-0 gap-0"
+									className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-accent/50 hover:bg-accent/5 flex flex-col overflow-hidden py-0 gap-0"
 									onClick={() => handleRowClick(item)}
 								>
 									<div className="flex-1 flex flex-col">
@@ -796,23 +830,23 @@ export function ProjectsListClient() {
 											{/* Readiness Metrics in One Row */}
 											<div className="grid grid-cols-3 gap-3">
 												<div className="flex flex-col gap-1">
-													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
+													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
 													<CompletionBadge value={item.checklist_percent} />
-													<span className="text-[10px] text-muted-foreground mt-0.5">
+													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
 														{item.checklist_remaining ?? 0} Items Remaining
 													</span>
 												</div>
 												<div className="flex flex-col gap-1">
-													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
+													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
 													<CompletionBadge value={item.sit_percent} />
-													<span className="text-[10px] text-muted-foreground mt-0.5">
+													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
 														{item.sit_remaining ?? 0} Tests Remaining
 													</span>
 												</div>
 												<div className="flex flex-col gap-1">
-													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
+													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
 													<CompletionBadge value={item.doc_percent} />
-													<span className="text-[10px] text-muted-foreground mt-0.5">
+													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
 														{item.doc_remaining ?? 0} Docs Remaining
 													</span>
 												</div>
