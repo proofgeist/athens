@@ -9,7 +9,9 @@ interface CircularProgressProps {
 }
 
 export function CircularProgress({ value, label, size = "md" }: CircularProgressProps) {
-  const percentage = Math.round(value);
+  // Convert decimal (0-1) to percentage (0-100) if needed
+  const percentageValue = value <= 1 ? value * 100 : value;
+  const percentage = Math.round(percentageValue);
   
   // Color logic matching CompletionBadge
   let color = "hsl(var(--muted))";

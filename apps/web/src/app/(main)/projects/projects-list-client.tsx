@@ -254,8 +254,8 @@ export function ProjectsListClient() {
 				),
 			},
 			{
-				accessorKey: "projectOverallCompletion",
-				id: "projectOverallCompletion",
+				accessorKey: "overall_completion",
+				id: "overall_completion",
 				header: ({ column }) => {
 					const isSorted = column.getIsSorted();
 					return (
@@ -282,11 +282,11 @@ export function ProjectsListClient() {
 					);
 				},
 				cell: ({ row }) => (
-					<CompletionBadge value={row.original.projectOverallCompletion} />
+					<CompletionBadge value={row.original.overall_completion} />
 				),
 			},
 			{
-				accessorKey: "raptor_checklist_completion",
+				accessorKey: "checklist_percent",
 				id: "raptor",
 				header: ({ column }) => {
 					const isSorted = column.getIsSorted();
@@ -314,11 +314,11 @@ export function ProjectsListClient() {
 					);
 				},
 				cell: ({ row }) => (
-					<CompletionBadge value={row.original.raptor_checklist_completion} />
+					<CompletionBadge value={row.original.checklist_percent} />
 				),
 			},
 			{
-				accessorKey: "sit_completion",
+				accessorKey: "sit_percent",
 				id: "sit",
 				header: ({ column }) => {
 					const isSorted = column.getIsSorted();
@@ -346,11 +346,11 @@ export function ProjectsListClient() {
 					);
 				},
 				cell: ({ row }) => (
-					<CompletionBadge value={row.original.sit_completion} />
+					<CompletionBadge value={row.original.sit_percent} />
 				),
 			},
 			{
-				accessorKey: "doc_verification_completion",
+				accessorKey: "doc_percent",
 				id: "doc",
 				header: ({ column }) => {
 					const isSorted = column.getIsSorted();
@@ -378,7 +378,7 @@ export function ProjectsListClient() {
 					);
 				},
 				cell: ({ row }) => (
-					<CompletionBadge value={row.original.doc_verification_completion} />
+					<CompletionBadge value={row.original.doc_percent} />
 				),
 			},
 			{
@@ -443,8 +443,8 @@ export function ProjectsListClient() {
 	});
 
 	const handleRowClick = (row: ProjectAssetItem) => {
-		if (row.project_id) {
-			router.push(`/projects/${row.project_id}`);
+		if (row.id) {
+			router.push(`/projects/${row.id}`);
 		}
 	};
 
@@ -788,19 +788,19 @@ export function ProjectsListClient() {
 											<div className="grid grid-cols-4 gap-2">
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Overall</span>
-													<CompletionBadge value={item.projectReadinessScore} />
+													<CompletionBadge value={item.overall_completion} />
 												</div>
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">RAPTOR</span>
-													<CompletionBadge value={item.raptor_checklist_completion} />
+													<CompletionBadge value={item.checklist_percent} />
 												</div>
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
-													<CompletionBadge value={item.sit_completion} />
+													<CompletionBadge value={item.sit_percent} />
 												</div>
 												<div className="flex flex-col gap-1">
 													<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
-													<CompletionBadge value={item.doc_verification_completion} />
+													<CompletionBadge value={item.doc_percent} />
 												</div>
 											</div>
 										</div>

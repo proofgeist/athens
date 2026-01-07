@@ -1,5 +1,7 @@
 export function CompletionBadge({ value }: { value: number | null | undefined }) {
-	const percentage = Math.round(value ?? 0);
+	// Convert decimal (0-1) to percentage (0-100) if needed
+	const percentageValue = value != null ? (value <= 1 ? value * 100 : value) : 0;
+	const percentage = Math.round(percentageValue);
 	
 	// Color coding based on completion percentage
 	let colorClass = "bg-muted text-muted-foreground";

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Ship, Calendar, Briefcase } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +12,14 @@ import { SystemProgressList } from "@/components/charts/system-progress-list";
 import Loader from "@/components/loader";
 import { orpc } from "@/utils/orpc";
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const { data: projectAsset, isLoading, error } = useQuery(
-    orpc.projectAssets.getDetailById.queryOptions({ input: { id: params.id } })
-  );
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const projectAssetId = params?.id as string;
+
+  const { data: projectAsset, isLoading, error } = useQuery({
+    ...orpc.projectAssets.getDetailById.queryOptions({ input: { id: projectAssetId } }),
+    enabled: !!projectAssetId,
+  });
 
   if (isLoading) {
     return (
