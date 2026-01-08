@@ -41,10 +41,10 @@ export default async function DashboardPage() {
 		<HydrationBoundary state={dehydrate(queryClient)}>
 			<div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden h-full">
 				{/* Page header */}
-				<div className="flex items-center justify-between py-4">
+				<div className="flex items-center justify-between py-4 border-b border-border/50">
 					<div>
-						<h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-						<p className="text-muted-foreground">
+						<h1 className="font-sans text-3xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+						<p className="text-sm text-muted-foreground mt-1">
 							Welcome back, {session?.user?.name}
 						</p>
 					</div>

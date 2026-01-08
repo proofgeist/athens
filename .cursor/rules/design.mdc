@@ -12,22 +12,34 @@ This design system is inspired by the Athens Group Services website, featuring n
 - **Data-forward**: Prioritize clarity and readability of information
 - **Structured**: Use clear visual hierarchy and organized layouts
 - **Streamlined**: Remove unnecessary decoration, focus on function
-- **Distinctive**: Avoid generic 'AI slop' aesthetics
-- **Cohesive**: Maintain consistent visual language across all components
+- **Distinctive**: Avoid generic 'AI slop' aesthetics - make creative, unexpected choices that surprise and delight
+- **Cohesive**: Maintain consistent visual language across all components using CSS variables
 - **Professional with Energy**: Balance corporate professionalism with vibrant accents
+- **Atmospheric**: Create depth and atmosphere through layered backgrounds, gradients, and contextual effects
+- **Motion-forward**: Use animations and micro-interactions to create high-impact moments, not scattered effects
 
 ### Anti-Patterns
-- Generic font families (Inter, Roboto, Arial, system fonts)
+- Generic font families (Inter, Roboto, Arial, system fonts, Space Grotesk)
 - Purple gradients on white backgrounds
 - Cookie-cutter component patterns without context
 - Overuse of shadows and borders
 - Inconsistent spacing and alignment
+- Timid, evenly-distributed color palettes (prefer dominant colors with sharp accents)
+- Predictable layouts that lack context-specific character
+- Scattered micro-interactions without orchestration
 
 ## Typography
 
+### Font Philosophy
+Choose fonts that are beautiful, unique, and interesting. DM Sans provides a distinctive geometric character that avoids the generic feel of Inter or Roboto. JetBrains Mono offers technical precision with personality. Together they create a cohesive yet distinctive aesthetic.
+
 ### Font Stack
 - **Sans**: DM Sans - Primary body and UI text
+  - Geometric, modern, professional yet approachable
+  - Distinctive character that avoids generic "AI slop" aesthetics
 - **Mono**: JetBrains Mono - Data, numbers, labels, code
+  - Technical precision with subtle personality
+  - Excellent readability for data-heavy interfaces
 
 ### Configuration
 ```typescript
@@ -37,25 +49,113 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+  adjustFontFallback: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   weight: ["400", "500"],
+  display: "swap",
+  adjustFontFallback: true,
 });
 ```
 
-### Usage Patterns
-- **Body text**: `font-sans` (DM Sans) - default
-- **Data values**: `font-mono text-2xl tabular-nums`
-- **Section labels**: `font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground`
-- **Large numbers**: `font-mono text-4xl font-semibold tabular-nums tracking-tight`
+### Typographic Hierarchy
+
+#### Headings
+```tsx
+// Hero/Display
+<h1 className="font-sans text-5xl sm:text-6xl font-bold tracking-tight">
+  Main Headline
+</h1>
+
+// Section Headers
+<h2 className="font-sans text-3xl font-semibold tracking-tight">
+  Section Title
+</h2>
+
+// Subsection Headers
+<h3 className="font-sans text-xl font-semibold">
+  Subsection
+</h3>
+```
+
+#### Body Text
+```tsx
+// Default body
+<p className="font-sans text-base leading-relaxed">
+  Body text with comfortable line height
+</p>
+
+// Small text
+<p className="font-sans text-sm text-muted-foreground">
+  Supporting information
+</p>
+
+// Large body (for emphasis)
+<p className="font-sans text-lg leading-relaxed">
+  Important body content
+</p>
+```
+
+#### Data & Numbers
+```tsx
+// Large metric values
+<p className="font-mono text-4xl sm:text-5xl font-semibold tabular-nums tracking-tight">
+  1,234
+</p>
+
+// Standard data values
+<p className="font-mono text-2xl font-semibold tabular-nums">
+  98.5%
+</p>
+
+// Small numeric labels
+<p className="font-mono text-sm tabular-nums text-muted-foreground">
+  ID: 12345
+</p>
+```
+
+#### Labels & UI Text
+```tsx
+// Section labels (distinctive uppercase style)
+<p className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+  SECTION LABEL
+</p>
+
+// Button text
+<span className="font-sans text-sm font-medium">
+  Button Label
+</span>
+
+// Navigation labels
+<span className="font-sans text-sm font-medium">
+  Nav Item
+</span>
+```
+
+### Typographic Principles
+- **Use font-mono for all numerical data** - ensures tabular alignment and technical precision
+- **Apply tabular-nums** to numbers that may change dynamically
+- **Use uppercase tracking-widest** for section labels to create clear hierarchy
+- **Maintain consistent font weights** - use 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
+- **Avoid font-weight 300 or lighter** - reduces readability and feels generic
+- **Use tracking-tight for large headings** - creates visual impact
+- **Use leading-relaxed for body text** - improves readability
 
 ## Color Palette
 
 ### Philosophy
-Navy blue foundation with bright cyan accents and orange highlights - professional yet energetic, inspired by maritime and offshore industries.
+Navy blue foundation with bright cyan accents and orange highlights - professional yet energetic, inspired by maritime and offshore industries. 
+
+**Color Strategy**: Use dominant colors (navy) with sharp accents (cyan, orange) rather than timid, evenly-distributed palettes. This creates visual hierarchy and prevents overwhelming the user. The navy provides stability and professionalism, while cyan and orange add energy and guide attention to important actions.
+
+**Color Distribution Guidelines**:
+- **70% Navy/Neutral**: Foundation colors (background, cards, borders)
+- **20% Cyan Accent**: Interactive elements, highlights, information
+- **10% Orange Highlight**: Primary CTAs, critical actions, emphasis
 
 ### Light Mode
 
@@ -165,23 +265,44 @@ Navy blue foundation with bright cyan accents and orange highlights - profession
 
 #### Primary Actions (Navy)
 ```tsx
-<Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-  Submit
+<Button className="group relative overflow-hidden bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98]">
+  <span className="relative z-10">Submit</span>
+  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
 </Button>
 ```
 
 #### Accent Actions (Cyan)
 ```tsx
-<Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-  Learn More
+<Button className="group relative overflow-hidden bg-accent text-accent-foreground transition-all duration-300 hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98]">
+  <span className="relative z-10">Learn More</span>
+  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
 </Button>
 ```
 
 #### Highlight Actions (Orange - CTAs)
 ```tsx
-<Button className="bg-highlight text-highlight-foreground hover:bg-highlight/90">
-  Get Started
+<Button className="group relative overflow-hidden bg-highlight text-highlight-foreground transition-all duration-300 hover:bg-highlight/90 hover:shadow-xl hover:shadow-highlight/40 hover:scale-105 active:scale-[0.98]">
+  <span className="relative z-10 font-semibold">Get Started</span>
+  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
 </Button>
+```
+
+#### Secondary/Ghost Buttons
+```tsx
+<Button className="group border-2 border-border bg-transparent text-foreground transition-all duration-300 hover:border-accent/50 hover:bg-accent/5 hover:text-accent active:scale-[0.98]">
+  Secondary Action
+</Button>
+
+<Button className="group text-foreground transition-all duration-300 hover:text-accent hover:bg-accent/5 active:scale-[0.98]">
+  Ghost Button
+</Button>
+```
+
+#### Icon Buttons
+```tsx
+<button className="group flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground transition-all duration-300 hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95">
+  <Icon className="h-5 w-5 transition-transform group-hover:rotate-12" />
+</button>
 ```
 
 #### Subtle Emphasis
@@ -208,6 +329,158 @@ hover:bg-accent/10          // Cyan highlight hover
 hover:border-accent/50      // Cyan border emphasis
 hover:text-highlight        // Orange text on hover
 ```
+
+## Backgrounds & Atmosphere
+
+### Philosophy
+Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic. Backgrounds should enhance the content, not compete with it.
+
+### Gradient Patterns
+
+#### Subtle Background Gradients
+```tsx
+// Soft vertical gradient
+<div className="bg-gradient-to-b from-background via-background to-secondary/30">
+  {/* Content */}
+</div>
+
+// Horizontal gradient (for headers)
+<div className="bg-gradient-to-r from-primary/5 via-background to-secondary/20">
+  {/* Header content */}
+</div>
+
+// Diagonal gradient
+<div className="bg-gradient-to-br from-background via-secondary/20 to-background">
+  {/* Content */}
+</div>
+```
+
+#### Hero Backgrounds
+```tsx
+// Navy gradient hero
+<div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/90">
+  {/* Pattern overlay */}
+  <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-10" />
+  {/* Content */}
+</div>
+
+// Multi-stop gradient
+<div className="bg-gradient-to-b from-primary via-accent/20 to-background">
+  {/* Content */}
+</div>
+```
+
+#### Card Backgrounds
+```tsx
+// Subtle gradient card
+<div className="bg-gradient-to-br from-card via-card to-secondary/30 border border-border">
+  {/* Card content */}
+</div>
+
+// Accent gradient card
+<div className="bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border border-accent/20">
+  {/* Card content */}
+</div>
+```
+
+### Pattern Overlays
+
+#### Grid Patterns
+```tsx
+<div className="relative">
+  {/* Grid pattern overlay */}
+  <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-[0.03] pointer-events-none" />
+  {/* Content */}
+</div>
+```
+
+#### Dot Patterns
+```tsx
+<div className="relative">
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(148,163,184)_1px,transparent_0)] bg-[length:24px_24px] opacity-[0.04] pointer-events-none" />
+  {/* Content */}
+</div>
+```
+
+#### Noise Texture
+```tsx
+<div className="relative">
+  <div className="absolute inset-0 bg-[url('/patterns/noise.svg')] opacity-[0.02] pointer-events-none" />
+  {/* Content */}
+</div>
+```
+
+### Layered Backgrounds
+
+#### Multi-layer Effect
+```tsx
+<div className="relative overflow-hidden">
+  {/* Base gradient */}
+  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
+  
+  {/* Pattern overlay */}
+  <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-[0.03]" />
+  
+  {/* Content */}
+  <div className="relative z-10">
+    {/* Your content */}
+  </div>
+</div>
+```
+
+#### Animated Backgrounds
+```tsx
+<div className="relative overflow-hidden">
+  {/* Subtle animated gradient */}
+  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 animate-gradient-shift" />
+  
+  {/* Content */}
+  <div className="relative z-10">
+    {/* Your content */}
+  </div>
+</div>
+```
+
+### Contextual Backgrounds
+
+#### Section Dividers
+```tsx
+{/* Subtle divider with gradient */}
+<div className="relative h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+{/* Section transition */}
+<div className="relative">
+  <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent pointer-events-none" />
+  {/* Next section content */}
+</div>
+```
+
+#### Status-based Backgrounds
+```tsx
+// Success state
+<div className="bg-gradient-to-br from-success/10 via-success/5 to-transparent border border-success/20">
+  Success message
+</div>
+
+// Warning state
+<div className="bg-gradient-to-br from-warning/10 via-warning/5 to-transparent border border-warning/20">
+  Warning message
+</div>
+
+// Info state
+<div className="bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border border-accent/20">
+  Info message
+</div>
+```
+
+### Best Practices
+- **Keep opacity low** - patterns should be subtle (0.02-0.10 opacity)
+- **Use pointer-events-none** - ensure overlays don't interfere with interactions
+- **Layer strategically** - base gradient → pattern → content
+- **Match context** - use navy tones for primary areas, cyan for accents
+- **Avoid overwhelming** - backgrounds should enhance, not distract
+- **Test contrast** - ensure text remains readable over backgrounds
+- **Use CSS variables** - maintain consistency with theme colors
 
 ## Layout Patterns
 
@@ -258,6 +531,52 @@ hover:text-highlight        // Orange text on hover
 - **Two column**: `grid gap-4 lg:grid-cols-2`
 - **Stacked**: `space-y-4`
 
+### Visual Hierarchy
+
+#### Section Spacing
+```tsx
+// Standard section
+<section className="space-y-6 py-8">
+  {/* Section content */}
+</section>
+
+// Tight section
+<section className="space-y-4 py-6">
+  {/* Compact content */}
+</section>
+
+// Spacious section
+<section className="space-y-8 py-12">
+  {/* Hero or important content */}
+</section>
+```
+
+#### Content Grouping
+```tsx
+// Card group with consistent spacing
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {/* Cards */}
+</div>
+
+// List with dividers
+<div className="divide-y divide-border">
+  {/* List items */}
+</div>
+
+// Stacked content
+<div className="space-y-4">
+  {/* Related content blocks */}
+</div>
+```
+
+#### Focus States
+```tsx
+// Focus-visible for keyboard navigation
+<button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+  Accessible Button
+</button>
+```
+
 ## Component Patterns
 
 ### Cards
@@ -299,18 +618,31 @@ hover:text-highlight        // Orange text on hover
 
 ### Action Buttons (Header Style)
 ```tsx
-<button className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3.5 shadow-sm transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:shadow-md">
+<button className="group relative flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3.5 shadow-sm transition-all duration-300 hover:border-accent/50 hover:bg-accent/5 hover:shadow-md hover:translate-y-[-2px] active:translate-y-0 active:scale-[0.98]">
   <div className="flex items-center gap-3">
-    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-foreground transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-foreground transition-all duration-300 group-hover:bg-accent group-hover:text-accent-foreground group-hover:scale-110 group-hover:rotate-3">
       {icon}
     </div>
     <div>
-      <p className="text-sm font-medium text-foreground">{label}</p>
+      <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-accent">{label}</p>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
   </div>
-  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent" />
 </button>
+```
+
+### Interactive Cards with Micro-interactions
+```tsx
+<div className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-xl hover:shadow-accent/10 hover:translate-y-[-4px]">
+  {/* Shimmer effect on hover */}
+  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+  
+  {/* Content */}
+  <div className="relative z-10 p-6">
+    {/* Card content */}
+  </div>
+</div>
 ```
 
 ### Progress Bars
@@ -418,20 +750,227 @@ hover:text-highlight        // Orange text on hover
 - **Gap medium**: `gap-4`
 - **Gap large**: `gap-6`
 
-## Animation Patterns
+## Motion & Micro-interactions
 
-### Transitions
+### Philosophy
+Use animations for effects and micro-interactions that create delight. Prioritize CSS-only solutions for HTML. Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Every animation should have purpose and enhance the user experience.
+
+### Timing & Easing
+
+#### Standard Durations
 ```css
-transition-all duration-200        /* Default */
-transition-colors                  /* Color only */
-transition-transform               /* Transform only */
+/* Quick micro-interactions */
+transition-all duration-150        /* Instant feedback */
+
+/* Standard interactions */
+transition-all duration-200       /* Default hover/click */
+
+/* Smooth transitions */
+transition-all duration-300       /* Color/state changes */
+
+/* Page transitions */
+transition-all duration-500       /* Layout shifts */
+
+/* Staggered reveals */
+animation-delay: 100ms, 200ms, 300ms  /* Sequential appearance */
 ```
 
-### Hover Effects
-- **Lift**: `hover:shadow-md`
-- **Slide**: `group-hover:translate-x-0.5`
-- **Color shift**: `group-hover:bg-accent group-hover:text-accent-foreground`
-- **Border glow**: `hover:border-accent/50 hover:shadow-accent/10`
+#### Easing Functions
+```css
+/* Default (ease-in-out) */
+transition-timing-function: ease-in-out
+
+/* Smooth acceleration */
+transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
+
+/* Bouncy (use sparingly) */
+transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55)
+```
+
+### Micro-interaction Patterns
+
+#### Button Interactions
+```tsx
+// Shimmer effect on hover
+<button className="group relative overflow-hidden bg-primary text-primary-foreground transition-all duration-300 hover:shadow-lg active:scale-[0.98]">
+  <span className="relative z-10">Button</span>
+  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+</button>
+
+// Scale on hover (subtle)
+<button className="transition-transform duration-200 hover:scale-105 active:scale-95">
+  Hover Me
+</button>
+
+// Icon rotation
+<button className="group">
+  <Icon className="transition-transform duration-300 group-hover:rotate-12" />
+</button>
+```
+
+#### Card Interactions
+```tsx
+// Lift and glow
+<div className="group transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-accent/10 hover:border-accent/50">
+  {/* Card content */}
+</div>
+
+// Subtle scale
+<div className="group transition-transform duration-300 hover:scale-[1.02]">
+  {/* Card content */}
+</div>
+```
+
+#### Link/Text Interactions
+```tsx
+// Underline animation
+<a className="relative text-accent transition-colors hover:text-accent/80">
+  Link Text
+  <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-accent transition-all duration-300 group-hover:w-full" />
+</a>
+
+// Text color shift
+<span className="transition-colors duration-200 hover:text-accent">
+  Interactive Text
+</span>
+```
+
+#### Input Focus States
+```tsx
+<input className="transition-all duration-200 focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:border-accent" />
+```
+
+### Page Load Animations
+
+#### Staggered Reveal Pattern
+```tsx
+<div className="space-y-4">
+  {items.map((item, index) => (
+    <div
+      key={item.id}
+      className="opacity-0 animate-fade-in-up"
+      style={{
+        animationDelay: `${index * 100}ms`,
+        animationFillMode: 'forwards',
+      }}
+    >
+      {/* Item content */}
+    </div>
+  ))}
+</div>
+```
+
+#### CSS Keyframes
+```css
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out;
+}
+```
+
+#### Hero Section Reveal
+```tsx
+<div className="relative overflow-hidden">
+  {/* Background with subtle animation */}
+  <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90 animate-gradient-shift" />
+  
+  {/* Content with staggered reveal */}
+  <div className="relative space-y-6">
+    <h1 className="opacity-0 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
+      Headline
+    </h1>
+    <p className="opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+      Description
+    </p>
+    <Button className="opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>
+      CTA
+    </Button>
+  </div>
+</div>
+```
+
+### Loading States
+
+#### Skeleton Loading
+```tsx
+<div className="animate-pulse">
+  <div className="h-4 bg-secondary rounded w-3/4 mb-2" />
+  <div className="h-4 bg-secondary rounded w-1/2" />
+</div>
+```
+
+#### Spinner
+```tsx
+<div className="flex items-center justify-center">
+  <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+</div>
+```
+
+### Scroll Animations
+
+#### Fade in on Scroll
+```tsx
+<div className="opacity-0 transition-opacity duration-700 data-[visible=true]:opacity-100">
+  {/* Content that fades in when scrolled into view */}
+</div>
+```
+
+### Transition Patterns
+
+#### Standard Transitions
+```tsx
+// Color transitions
+className="transition-colors duration-200"
+
+// Transform transitions
+className="transition-transform duration-300"
+
+// All properties
+className="transition-all duration-200"
+
+// Specific properties
+className="transition-[background-color,border-color] duration-200"
+```
+
+#### Hover Effects Library
+```tsx
+// Lift with shadow
+hover:translate-y-[-2px] hover:shadow-md
+
+// Slide icon
+group-hover:translate-x-1
+
+// Color shift
+group-hover:bg-accent group-hover:text-accent-foreground
+
+// Border glow
+hover:border-accent/50 hover:shadow-accent/10
+
+// Scale (subtle)
+hover:scale-105 active:scale-95
+
+// Rotate
+group-hover:rotate-12
+```
+
+### Best Practices
+- **One animation per interaction** - don't combine too many effects
+- **Use active states** - provide feedback on click/tap with `active:scale-95`
+- **Stagger reveals** - use `animation-delay` for sequential appearance
+- **Respect prefers-reduced-motion** - wrap animations in `@media (prefers-reduced-motion: no-preference)`
+- **Keep durations short** - 150-300ms for micro-interactions, 500ms+ for page transitions
+- **Use transform and opacity** - these properties are GPU-accelerated and performant
+- **Avoid animating layout properties** - don't animate `width`, `height`, `margin`, `padding` (use `transform` instead)
 
 ## Responsive Patterns
 
@@ -567,18 +1106,45 @@ const variantStyles = {
 
 ## Best Practices
 
+### Typography
 1. **Use font-mono for all numerical data** to ensure tabular alignment
 2. **Apply tabular-nums** to numbers that may change dynamically
-3. **Use uppercase tracking-widest** for section labels
-4. **Prefer bg-secondary/50** for subtle interactive backgrounds
-5. **Use border-border/50 or border-border/60** for softer borders
-6. **Apply group hover patterns** for parent-child interactions
-7. **Use transitions on interactive elements** for polish
-8. **Maintain consistent border-radius**: rounded-lg for buttons, rounded-xl for cards
-9. **Use cyan (accent) for informational highlights** and navigation emphasis
-10. **Reserve orange (highlight) for primary CTAs** and important actions
-11. **Navy (primary) is the foundation** - use it for headers, primary actions, and branding
-12. **Balance professional navy with energetic accents** - don't let it become too corporate
+3. **Use uppercase tracking-widest** for section labels to create clear hierarchy
+4. **Maintain consistent font weights** - avoid weights lighter than 400
+5. **Use tracking-tight for large headings** - creates visual impact
+6. **Use leading-relaxed for body text** - improves readability
+
+### Color & Visual Hierarchy
+7. **Follow the 70/20/10 rule**: 70% navy/neutral, 20% cyan accent, 10% orange highlight
+8. **Use cyan (accent) for informational highlights** and navigation emphasis
+9. **Reserve orange (highlight) for primary CTAs** and important actions
+10. **Navy (primary) is the foundation** - use it for headers, primary actions, and branding
+11. **Prefer bg-secondary/50** for subtle interactive backgrounds
+12. **Use border-border/50 or border-border/60** for softer borders
+13. **Balance professional navy with energetic accents** - don't let it become too corporate
+
+### Motion & Micro-interactions
+14. **One animation per interaction** - don't combine too many effects
+15. **Use active states** - provide feedback on click/tap with `active:scale-95`
+16. **Stagger reveals** - use `animation-delay` for sequential appearance on page load
+17. **Keep durations short** - 150-300ms for micro-interactions, 500ms+ for page transitions
+18. **Use transform and opacity** - these properties are GPU-accelerated and performant
+19. **Avoid animating layout properties** - use `transform` instead of `width`/`height`/`margin`/`padding`
+20. **Respect prefers-reduced-motion** - wrap animations in media queries
+
+### Structure & Layout
+21. **Apply group hover patterns** for parent-child interactions
+22. **Use transitions on interactive elements** for polish
+23. **Maintain consistent border-radius**: rounded-lg for buttons, rounded-xl for cards
+24. **Create depth with layered backgrounds** - gradients, patterns, overlays
+25. **Use CSS variables consistently** - maintain theme cohesion
+
+### Avoiding Generic Aesthetics
+26. **Never use generic fonts** - avoid Inter, Roboto, Arial, Space Grotesk, system fonts
+27. **Avoid purple gradients on white** - this is a clichéd "AI slop" pattern
+28. **Make unexpected choices** - vary between contexts, don't converge on common patterns
+29. **Create context-specific character** - design should feel purpose-built, not template-based
+30. **Focus on high-impact moments** - one well-orchestrated animation beats scattered effects
 
 ## CSS Variables Setup
 
@@ -660,6 +1226,47 @@ Add to your `globals.css`:
     --ring: oklch(0.75 0.16 210);
   }
 }
+
+/* Animation Keyframes */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 ```
 
 ## Tailwind Config Extension
@@ -709,7 +1316,8 @@ module.exports = {
 
 ---
 
-**Version**: 1.0  
+**Version**: 2.0  
 **Inspiration**: Athens Group Services website (athensgroupservices.com)  
-**Color Philosophy**: Professional navy foundation with vibrant cyan and orange accents for modern energy
+**Color Philosophy**: Professional navy foundation with vibrant cyan and orange accents for modern energy  
+**Design Philosophy**: Distinctive, creative aesthetics that avoid generic "AI slop" patterns. Focus on typography, motion, and atmospheric backgrounds that surprise and delight.
 

@@ -68,9 +68,9 @@ export default function SignInForm({
 	}
 
 	return (
-		<Card className="w-full max-w-md border-border bg-card shadow-lg">
+		<Card className="w-full max-w-md border-border bg-card shadow-lg transition-all duration-300 hover:shadow-xl">
 			<CardHeader className="text-center">
-				<CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+				<CardTitle className="font-sans text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
 				<CardDescription>Sign in to your account to continue</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -83,6 +83,7 @@ export default function SignInForm({
 							placeholder="you@example.com"
 							{...register("email")}
 							aria-invalid={errors.email ? "true" : "false"}
+							className="transition-all duration-200 focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:border-accent"
 						/>
 						{errors.email && (
 							<p className="text-sm text-destructive">{errors.email.message}</p>
@@ -97,6 +98,7 @@ export default function SignInForm({
 							placeholder="••••••••"
 							{...register("password")}
 							aria-invalid={errors.password ? "true" : "false"}
+							className="transition-all duration-200 focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:border-accent"
 						/>
 						{errors.password && (
 							<p className="text-sm text-destructive">
@@ -105,7 +107,7 @@ export default function SignInForm({
 						)}
 					</div>
 
-					<Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
+					<Button type="submit" variant="default" className="w-full" disabled={isSubmitting}>
 						{isSubmitting ? "Signing in..." : "Sign In"}
 					</Button>
 				</form>
@@ -117,7 +119,7 @@ export default function SignInForm({
 					<Button
 						variant="link"
 						onClick={onSwitchToSignUp}
-						className="p-0 h-auto text-accent hover:text-accent/80"
+						className="p-0 h-auto"
 					>
 						Sign Up
 					</Button>

@@ -13,10 +13,10 @@ export function OpenActionItemsCard() {
 	const totalOpenItems = actionStats?.byStatus.Open ?? 0;
 
 	return (
-		<div className="col-span-1 md:col-span-1 lg:col-span-4 rounded-xl border bg-card flex flex-col w-full">
+		<div className="group col-span-1 md:col-span-1 lg:col-span-4 rounded-xl border border-border bg-card flex flex-col w-full shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md">
 			<div className="p-6 pb-4 flex items-start justify-between">
 				<div>
-					<h3 className="font-semibold">Open Action Items</h3>
+					<h3 className="font-semibold text-foreground">Open Action Items</h3>
 					<p className="text-sm text-muted-foreground">
 						Items requiring your attention
 					</p>

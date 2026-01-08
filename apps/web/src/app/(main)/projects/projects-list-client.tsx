@@ -130,21 +130,25 @@ export function ProjectsListClient() {
 					);
 				},
 				cell: ({ row }) => (
-					<div>{row.original.assetName || "Unknown Rig"}</div>
+					<div className="flex flex-col">
+						<div>{row.original.assetName || "Unknown Rig"}</div>
+						{row.original.assetType && (
+							<div className="text-muted-foreground text-xs">
+								{row.original.assetType}
+							</div>
+						)}
+					</div>
 				),
 				enableGlobalFilter: true, // Include in global search
 			},
 			{
 				accessorKey: "assetType",
 				id: "assetType",
-				header: "Type",
-				cell: ({ row }) => (
-					<div className="text-muted-foreground">
-						{row.original.assetType || "—"}
-					</div>
-				),
+				header: () => null,
+				cell: () => null,
 				enableColumnFilter: true,
 				filterFn: "equalsString",
+				enableHiding: true,
 			},
 			{
 				accessorKey: "projectStatus",
@@ -184,7 +188,7 @@ export function ProjectsListClient() {
 			},
 			{
 				accessorKey: "projectStartDate",
-				id: "projectStartDate",
+				id: "projectDates",
 				header: ({ column }) => {
 					const isSorted = column.getIsSorted();
 					return (
@@ -199,7 +203,7 @@ export function ProjectsListClient() {
 							}}
 							className="-ml-4"
 						>
-							Start Date
+							Date Range
 							{isSorted === "asc" ? (
 								<ChevronUp className="ml-2 h-4 w-4" />
 							) : isSorted === "desc" ? (
@@ -210,49 +214,43 @@ export function ProjectsListClient() {
 						</Button>
 					);
 				},
-				cell: ({ row }) => (
-					<div className="text-muted-foreground">
-						{row.original.projectStartDate
-							? new Date(row.original.projectStartDate).toLocaleDateString()
-							: "—"}
-					</div>
-				),
-			},
-			{
-				accessorKey: "projectEndDate",
-				id: "projectEndDate",
-				header: ({ column }) => {
-					const isSorted = column.getIsSorted();
+				cell: ({ row }) => {
+					const startDate = row.original.projectStartDate
+						? new Date(row.original.projectStartDate).toLocaleDateString(undefined, {
+								month: "numeric",
+								day: "numeric",
+								year: "numeric",
+						  })
+						: null;
+					const endDate = row.original.projectEndDate
+						? new Date(row.original.projectEndDate).toLocaleDateString(undefined, {
+								month: "numeric",
+								day: "numeric",
+								year: "numeric",
+						  })
+						: null;
+
+					if (!startDate && !endDate) {
+						return <div className="text-muted-foreground">—</div>;
+					}
+
 					return (
-						<Button
-							variant="ghost"
-							onClick={() => {
-								if (isSorted === "desc") {
-									column.clearSorting();
-								} else {
-									column.toggleSorting(isSorted === "asc");
-								}
-							}}
-							className="-ml-4"
-						>
-							End Date
-							{isSorted === "asc" ? (
-								<ChevronUp className="ml-2 h-4 w-4" />
-							) : isSorted === "desc" ? (
-								<ChevronDown className="ml-2 h-4 w-2" />
-							) : (
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							)}
-						</Button>
+						<div className="text-muted-foreground">
+							{startDate || "?"}
+							{startDate && endDate && "-"}
+							{endDate || "?"}
+						</div>
 					);
 				},
-				cell: ({ row }) => (
-					<div className="text-muted-foreground">
-						{row.original.projectEndDate
-							? new Date(row.original.projectEndDate).toLocaleDateString()
-							: "—"}
-					</div>
-				),
+				sortingFn: (rowA, rowB) => {
+					const dateA = rowA.original.projectStartDate
+						? new Date(rowA.original.projectStartDate).getTime()
+						: 0;
+					const dateB = rowB.original.projectStartDate
+						? new Date(rowB.original.projectStartDate).getTime()
+						: 0;
+					return dateA - dateB;
+				},
 			},
 			{
 				accessorKey: "overall_completion",
@@ -382,40 +380,6 @@ export function ProjectsListClient() {
 					<CompletionBadge value={row.original.doc_percent} />
 				),
 			},
-			{
-				accessorKey: "checklist_remaining",
-				id: "remaining",
-				header: ({ column }) => {
-					const isSorted = column.getIsSorted();
-					return (
-						<Button
-							variant="ghost"
-							onClick={() => {
-								if (isSorted === "desc") {
-									column.clearSorting();
-								} else {
-									column.toggleSorting(isSorted === "asc");
-								}
-							}}
-							className="-ml-4"
-						>
-							Remaining
-							{isSorted === "asc" ? (
-								<ChevronUp className="ml-2 h-4 w-4" />
-							) : isSorted === "desc" ? (
-								<ChevronDown className="ml-2 h-4 w-2" />
-							) : (
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							)}
-						</Button>
-					);
-				},
-				cell: ({ row }) => (
-					<div className="text-center">
-						{row.original.checklist_remaining ?? 0}
-					</div>
-				),
-			},
 		],
 		[]
 	);
@@ -439,6 +403,9 @@ export function ProjectsListClient() {
 		initialState: {
 			pagination: {
 				pageSize: 20,
+			},
+			columnVisibility: {
+				assetType: false,
 			},
 		},
 	});
@@ -885,7 +852,7 @@ export function ProjectsListClient() {
 							{table.getRowModel().rows.length === 0 ? (
 								<tr>
 									<td
-										colSpan={columns.length}
+										colSpan={table.getVisibleFlatColumns().length}
 										className="py-12 text-center text-muted-foreground"
 									>
 										No projects found

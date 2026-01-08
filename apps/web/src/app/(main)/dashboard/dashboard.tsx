@@ -32,32 +32,32 @@ export function DashboardStats() {
 
 	return (
 		<div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
+			<div className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md hover:translate-y-[-2px]">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<h3 className="text-xs font-medium text-muted-foreground">Total Projects</h3>
 				</div>
-				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{totalProjects}</div>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">{totalProjects}</div>
 				<p className="text-[10px] text-muted-foreground/70">Active project assets</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
+			<div className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md hover:translate-y-[-2px]">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<h3 className="text-xs font-medium text-muted-foreground">RAPTOR Completion</h3>
 				</div>
-				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{raptorCompletion}%</div>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-accent">{raptorCompletion}%</div>
 				<p className="text-[10px] text-muted-foreground/70">Average checklist completion</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
+			<div className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md hover:translate-y-[-2px]">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<h3 className="text-xs font-medium text-muted-foreground">Open Action Items</h3>
 				</div>
-				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">{openActions}</div>
+				<div className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">{openActions}</div>
 				<p className="text-[10px] text-muted-foreground/70">Items requiring attention</p>
 			</div>
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
+			<div className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:border-destructive/50 hover:shadow-md hover:translate-y-[-2px]">
 				<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<h3 className="text-xs font-medium text-muted-foreground">High Priority</h3>
 				</div>
-				<div className={`font-mono text-2xl font-semibold tabular-nums tracking-tight ${highPriority > 0 ? "text-destructive" : ""}`}>
+				<div className={`font-mono text-2xl font-semibold tabular-nums tracking-tight ${highPriority > 0 ? "text-destructive" : "text-foreground"}`}>
 					{highPriority}
 				</div>
 				<p className="text-[10px] text-muted-foreground/70">Open high-priority items</p>
@@ -113,34 +113,38 @@ export function RecentActivity() {
 					: item.system_group || "General";
 
 				return (
-					<div key={item.id} className="flex items-center gap-4">
+					<Link
+						key={item.id}
+						href={`/action-items/${item.id}`}
+						className="group flex items-center gap-4 rounded-lg p-2 transition-all duration-200 hover:bg-accent/5 hover:translate-x-1"
+					>
 						<div
-							className={`h-2 w-2 rounded-full flex-shrink-0 ${
+							className={`h-2 w-2 rounded-full flex-shrink-0 transition-all duration-200 ${
 								item.priority === "High"
-									? "bg-destructive"
+									? "bg-destructive group-hover:scale-125"
 									: item.priority === "Medium"
-										? "bg-yellow-500"
-										: "bg-primary"
+										? "bg-warning group-hover:scale-125"
+										: "bg-primary group-hover:scale-125"
 							}`}
 						/>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium truncate">{item.title}</p>
+							<p className="text-sm font-medium truncate transition-colors duration-200 group-hover:text-accent">{item.title}</p>
 							<p className="text-xs text-muted-foreground truncate">
 								{contextInfo}
 							</p>
 						</div>
 						<span
-							className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+							className={`text-xs px-2 py-1 rounded-full flex-shrink-0 transition-all duration-200 ${
 								item.priority === "High"
-									? "bg-destructive/10 text-destructive"
+									? "bg-destructive/10 text-destructive group-hover:bg-destructive/20"
 									: item.priority === "Medium"
-										? "bg-yellow-500/10 text-yellow-600"
-										: "bg-primary/10 text-primary"
+										? "bg-warning/10 text-warning group-hover:bg-warning/20"
+										: "bg-primary/10 text-primary group-hover:bg-primary/20"
 							}`}
 						>
 							{item.priority}
 						</span>
-					</div>
+					</Link>
 	);
 			})}
 		</div>

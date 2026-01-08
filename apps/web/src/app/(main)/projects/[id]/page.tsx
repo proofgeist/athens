@@ -6,6 +6,7 @@ import { ArrowLeft, Ship, Calendar, Briefcase } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/charts/circular-progress";
+import { CategoryProgressBar } from "@/components/charts/category-progress-bar";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
 import { GroupedBarChart } from "@/components/charts/grouped-bar-chart";
 import { SystemProgressList } from "@/components/charts/system-progress-list";
@@ -102,81 +103,113 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="container mx-auto px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Projects
-        </Link>
+      {/* Back Link */}
+      <Link
+        href="/projects"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Projects
+      </Link>
 
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">{data.projectName || "Project Details"}</h1>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            {data.assetName && (
-              <div className="flex items-center gap-2">
-                <Ship className="h-4 w-4" />
-                <span>
-                  {data.assetName}
-                  {data.assetType && <span className="text-muted-foreground/70"> • {data.assetType}</span>}
-                </span>
+      {/* Hero Card with Overall Progress Ring */}
+      <Card className="relative overflow-hidden">
+        <CardContent className="py-4 px-6">
+          <div className="flex items-center">
+            {/* Header Section with Absolute Ring */}
+            <div className="flex-1 space-y-3 pr-[140px]">
+              <h1 className="text-3xl font-bold leading-tight">{data.projectName || "Project Details"}</h1>
+              
+              {/* Info Group - Horizontal Layout */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                {data.assetName && (
+                  <div className="flex items-center gap-2">
+                    <Ship className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      {data.assetName}
+                      {data.assetType && <span className="text-muted-foreground/70"> • {data.assetType}</span>}
+                    </span>
+                  </div>
+                )}
+                {data.projectStatus && (
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 flex-shrink-0" />
+                    <span>{data.projectStatus}</span>
+                    <span className={`h-2 w-2 rounded-full ${getStatusDotColor(data.projectStatus)}`} />
+                  </div>
+                )}
+                {(data.projectStartDate || data.projectEndDate) && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      {data.projectStartDate
+                        ? new Date(data.projectStartDate).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "?"}
+                      {" - "}
+                      {data.projectEndDate
+                        ? new Date(data.projectEndDate).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "?"}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-            {data.projectStatus && (
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4" />
-                <span>{data.projectStatus}</span>
-                <span className={`h-2 w-2 rounded-full ${getStatusDotColor(data.projectStatus)}`} />
-              </div>
-            )}
-            {(data.projectStartDate || data.projectEndDate) && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {data.projectStartDate
-                    ? new Date(data.projectStartDate).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "?"}
-                  {" - "}
-                  {data.projectEndDate
-                    ? new Date(data.projectEndDate).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "?"}
-                </span>
-              </div>
-            )}
+            </div>
+
+            {/* Circular Progress - Vertically Centered */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-6">
+              <CircularProgress 
+                value={data.overall_completion ?? 0} 
+                label={`Overall\nReadiness`}
+                size="sm"
+                labelInside={true}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Row 1: Four Circular Progress Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Progress Categories Cards - Horizontal Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <CircularProgress value={data.overall_completion ?? 0} label="Overall Readiness" />
+ 
+          <CardContent>
+            <CategoryProgressBar
+              label="RAPTOR Checklist"
+              value={data.checklist_percent ?? 0}
+              completed={(data.checklist_total ?? 0) - (data.checklist_remaining ?? 0)}
+              total={data.checklist_total ?? 0}
+              itemLabel="Items"
+            />
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <CircularProgress value={data.checklist_percent ?? 0} label="RAPTOR Checklist" />
+          <CardContent>
+            <CategoryProgressBar
+              label="SIT Completion"
+              value={data.sit_percent ?? 0}
+              completed={(data.sit_total ?? 0) - (data.sit_remaining ?? 0)}
+              total={data.sit_total ?? 0}
+              itemLabel="Tests"
+            />
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <CircularProgress value={data.sit_percent ?? 0} label="SIT Completion" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <CircularProgress value={data.doc_percent ?? 0} label="Doc Verification" />
+          <CardContent>
+            <CategoryProgressBar
+              label="Doc Verification"
+              value={data.doc_percent ?? 0}
+              completed={(data.doc_total ?? 0) - (data.doc_remaining ?? 0)}
+              total={data.doc_total ?? 0}
+              itemLabel="Docs"
+            />
           </CardContent>
         </Card>
       </div>
@@ -224,34 +257,25 @@ export default function ProjectDetailPage() {
       {/* Row 3: Three System Progress Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Documentation Verification Progress Per System</CardTitle>
-          </CardHeader>
           <CardContent>
             <SystemProgressList
-              title="Doc Verification"
+              title="Documentation Verification Progress Per System"
               items={data.system_progress_json?.docVerification ?? []}
             />
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Checklist Progress Per System</CardTitle>
-          </CardHeader>
           <CardContent>
             <SystemProgressList
-              title="Checklist"
+              title="Checklist Progress Per System"
               items={data.system_progress_json?.checklist ?? []}
             />
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">SIT Progress Per System</CardTitle>
-          </CardHeader>
           <CardContent>
             <SystemProgressList
-              title="SIT"
+              title="SIT Progress Per System"
               items={data.system_progress_json?.sit ?? []}
             />
           </CardContent>

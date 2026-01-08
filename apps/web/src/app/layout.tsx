@@ -7,12 +7,16 @@ const dmSans = DM_Sans({
 	variable: "--font-dm-sans",
 	subsets: ["latin"],
 	weight: ["400", "500", "600", "700"],
+	display: "swap",
+	adjustFontFallback: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
 	variable: "--font-jetbrains-mono",
 	subsets: ["latin"],
 	weight: ["400", "500"],
+	display: "swap",
+	adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {

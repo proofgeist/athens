@@ -18,10 +18,10 @@ function ProjectAssetRow({ item }: { item: any }) {
 	return (
 		<tr
 			onClick={handleClick}
-			className="cursor-pointer hover:bg-muted/50 transition-colors"
+			className="group cursor-pointer hover:bg-accent/5 transition-all duration-200"
 		>
 			<td className="py-3 px-4 text-sm font-medium whitespace-nowrap">
-				<div className="max-w-[200px] truncate">
+				<div className="max-w-[200px] truncate transition-colors duration-200 group-hover:text-accent">
 					{item.projectName || "Unknown Project"}
 				</div>
 			</td>
@@ -72,20 +72,20 @@ function ProjectAssetsList() {
 		<div className="overflow-x-auto -mx-6 px-6">
 			<table className="w-full min-w-[600px]">
 				<thead>
-					<tr className="border-b">
-						<th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+					<tr className="border-b border-border">
+						<th className="py-3 px-4 text-left font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
 							Project
 						</th>
-						<th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+						<th className="py-3 px-4 text-left font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
 							Asset
 						</th>
-						<th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+						<th className="py-3 px-4 text-left font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
 							RAPTOR
 						</th>
-						<th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+						<th className="py-3 px-4 text-left font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
 							SIT
 						</th>
-						<th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+						<th className="py-3 px-4 text-left font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
 							Doc
 						</th>
 					</tr>
@@ -107,10 +107,10 @@ export function ProjectAssetsCard() {
 	const totalCount = stats?.totalProjects ?? 0;
 
 	return (
-		<div className="col-span-7 rounded-xl border bg-card flex flex-col">
+		<div className="group col-span-7 rounded-xl border border-border bg-card flex flex-col shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md">
 			<div className="p-6 pb-4 flex items-start justify-between">
 				<div>
-					<h3 className="font-semibold">Project Overview</h3>
+					<h3 className="font-semibold text-foreground">Project Overview</h3>
 					<p className="text-sm text-muted-foreground">
 						Completion status across projects
 					</p>

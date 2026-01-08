@@ -131,7 +131,7 @@ function ActionItemsSummary() {
 
 export function ActionItemsSummaryCard() {
 	return (
-		<div className="col-span-1 md:col-span-1 lg:col-span-3 rounded-xl border bg-card flex flex-col overflow-hidden w-full">
+		<div className="group col-span-1 md:col-span-1 lg:col-span-3 rounded-xl border border-border bg-card flex flex-col overflow-hidden w-full shadow-sm transition-all duration-300 hover:border-accent/50 hover:shadow-md">
 			<div className="flex flex-col flex-1 min-h-0">
 				<div className="p-6 pb-0">
 					<ActionItemsSummaryHeader />

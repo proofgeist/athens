@@ -51,7 +51,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 							className="mr-2 data-[orientation=vertical]:h-4"
 						/>
 						{pageTitle && (
-							<span className="text-sm font-medium">{pageTitle}</span>
+							<span className="font-sans text-sm font-semibold text-foreground">{pageTitle}</span>
 						)}
 					</div>
 					<div className="flex items-center gap-2">

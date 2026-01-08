@@ -6,19 +6,22 @@ export default function AuthLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+		<div className="relative min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-secondary/30">
+			{/* Subtle pattern overlay */}
+			<div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(148,163,184)_1px,transparent_0)] bg-[length:24px_24px] opacity-[0.02] pointer-events-none" />
+			
 			{/* Minimal header with just theme toggle */}
-			<div className="flex justify-end p-4">
+			<div className="relative flex justify-end p-4 z-10">
 				<ModeToggle />
 			</div>
 
 			{/* Centered content */}
-			<div className="flex-1 flex items-center justify-center px-4">
+			<div className="relative flex-1 flex items-center justify-center px-4 z-10">
 				{children}
 			</div>
 
 			{/* Footer */}
-			<div className="p-4 text-center text-sm text-muted-foreground">
+			<div className="relative p-4 text-center text-sm text-muted-foreground z-10">
 				© {new Date().getFullYear()} Athens
 			</div>
 		</div>
