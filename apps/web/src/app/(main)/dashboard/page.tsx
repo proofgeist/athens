@@ -5,11 +5,8 @@ import { makeQueryClient } from "@/utils/query-client";
 import { createServerOrpc } from "@/utils/orpc-server";
 import {
 	DashboardStats,
-	RecentActivity,
 } from "./dashboard";
-import { ActionItemsSummaryCard } from "./action-items-summary-card";
 import { ProjectAssetsCard } from "./project-assets-card";
-import { OpenActionItemsCard } from "./open-action-items-card";
 
 export default async function DashboardPage() {
 	// Session is guaranteed by layout protection - this call is cached
@@ -25,16 +22,6 @@ export default async function DashboardPage() {
 	await Promise.all([
 		queryClient.prefetchQuery(orpc.projectAssets.getSummaryStats.queryOptions()),
 		queryClient.prefetchQuery(orpc.projectAssets.listForDashboard.queryOptions()),
-		queryClient.prefetchQuery(orpc.smartList.getStatusSummary.queryOptions({ input: {} })),
-		queryClient.prefetchQuery(
-			orpc.smartList.list.queryOptions({
-				input: {
-					limit: 4,
-					status: "Open",
-					includeRelated: true,
-				},
-			})
-		),
 	]);
 
 	return (
@@ -52,12 +39,6 @@ export default async function DashboardPage() {
 
 				{/* Stats cards - hydrated from server */}
 				<DashboardStats />
-
-				{/* Main content area */}
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-					<OpenActionItemsCard />
-					<ActionItemsSummaryCard />
-				</div>
 
 				{/* Project assets overview */}
 				<div className="grid gap-4">
