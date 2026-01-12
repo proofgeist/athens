@@ -4,6 +4,8 @@
 
 export { account } from "./account";
 export { Assets } from "./Assets";
+export { Issues, IssuePrioritySchema, IssueStatusSchema, type IssuePriority, type IssueStatus } from "./Issues";
+export { IssueNotes } from "./IssueNotes";
 export { ProjectAssets } from "./ProjectAssets";
 export { Projects } from "./Projects";
 export { session } from "./session";
