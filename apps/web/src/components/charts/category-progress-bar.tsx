@@ -37,7 +37,7 @@ export function CategoryProgressBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+        <span className="font-mono text-[12px] font-bold uppercase tracking-widest">
           {label}
         </span>
         <span className="font-mono text-sm font-semibold tabular-nums text-foreground">

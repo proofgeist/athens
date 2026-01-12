@@ -21,7 +21,7 @@ export function HorizontalBarChart({ data }: HorizontalBarChartProps) {
   }, {} as Record<string, { label: string; color: string }>);
 
   return (
-    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+    <ChartContainer config={chartConfig} className="h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
