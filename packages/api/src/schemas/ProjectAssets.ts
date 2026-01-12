@@ -113,5 +113,5 @@ export const ProjectAssets = fmTableOccurrence("ProjectAssets", {
       })
     ),
 }, {
-  navigationPaths: ["Projects", "Assets", "IssuesSummary", "SmartList"]
+  navigationPaths: ["Projects", "Assets", "Issues", "SmartList"]
 });

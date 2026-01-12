@@ -55,10 +55,10 @@ describe('ProjectAssets OData API', () => {
       
       if (result.data && result.data.length > 0) {
         const pa = result.data[0]!;
-        expect(pa.raptor_checklist_completion).toBeDefined();
-        expect(pa.sit_completion).toBeDefined();
-        expect(pa.doc_verification_completion).toBeDefined();
-        console.log(`Completion metrics: RAPTOR=${pa.raptor_checklist_completion}%, SIT=${pa.sit_completion}%, Doc=${pa.doc_verification_completion}%`);
+        expect(pa.checklist_percent).toBeDefined();
+        expect(pa.sit_percent).toBeDefined();
+        expect(pa.doc_percent).toBeDefined();
+        console.log(`Completion metrics: RAPTOR=${pa.checklist_percent}%, SIT=${pa.sit_percent}%, Doc=${pa.doc_percent}%`);
       }
     });
   });

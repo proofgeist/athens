@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { eq, inArray } from '@proofkit/fmodata';
-import { db, SmartList, ProjectAssets, Projects, Assets } from '../db';
+import { db, ProjectAssets, Projects, Assets } from '../db';
 
 /**
  * Exploration tests to understand FileMaker OData expand/navigation limits
@@ -21,13 +21,12 @@ describe('OData Expand Exploration', () => {
 
   describe('Expand behavior', () => {
     
-    it('Single-level expand works (SmartList → ProjectAssets)', async () => {
+    it('Single-level expand works (ProjectAssets → Projects)', async () => {
       const query = db
-        .from(SmartList)
+        .from(ProjectAssets)
         .list()
-        .where(eq(SmartList.status, 'Open'))
         .top(3)
-        .expand(ProjectAssets);
+        .expand(Projects);
 
       const queryString = query.getQueryString();
       console.log('Single-level expand query:', queryString);
@@ -39,26 +38,25 @@ describe('OData Expand Exploration', () => {
       
       if (result.data && result.data.length > 0) {
         const item = result.data[0]!;
-        expect('ProjectAssets' in item).toBe(true);
-        const pa = (item as any).ProjectAssets;
-        expect(Array.isArray(pa)).toBe(true);
-        console.log('✅ Single-level expand works. ProjectAssets returned:', pa.length, 'items');
+        expect('Projects' in item).toBe(true);
+        const projects = (item as any).Projects;
+        expect(Array.isArray(projects)).toBe(true);
+        console.log('✅ Single-level expand works. Projects returned:', projects.length, 'items');
       }
     });
 
-    it('Nested expand is SILENTLY IGNORED (SmartList → ProjectAssets → Projects)', async () => {
+    it('Nested expand is SILENTLY IGNORED (ProjectAssets → Projects → ProjectAssets)', async () => {
       const query = db
-        .from(SmartList)
+        .from(ProjectAssets)
         .list()
-        .where(eq(SmartList.status, 'Open'))
         .top(3)
-        .expand(ProjectAssets, (paBuilder) =>
-          paBuilder.expand(Projects)
+        .expand(Projects, (pBuilder) =>
+          pBuilder.expand(ProjectAssets)
         );
 
       const queryString = query.getQueryString();
       console.log('Nested expand query:', queryString);
-      // Expected query includes: $expand=ProjectAssets(...;$expand=Projects(...))
+      // Expected query includes: $expand=Projects(...;$expand=ProjectAssets(...))
 
       const result = await query.execute();
 
@@ -68,14 +66,14 @@ describe('OData Expand Exploration', () => {
 
       if (result.data && result.data.length > 0) {
         const item = result.data[0];
-        const pa = (item as any).ProjectAssets?.[0];
+        const project = (item as any).Projects?.[0];
         
-        // The nested Projects expand is NOT present
-        const hasProjects = pa && 'Projects' in pa;
-        console.log('❌ Nested expand silently ignored. Has Projects?', hasProjects);
+        // The nested ProjectAssets expand is NOT present
+        const hasProjectAssets = project && 'ProjectAssets' in project;
+        console.log('❌ Nested expand silently ignored. Has ProjectAssets?', hasProjectAssets);
         
         // This documents the limitation - nested expands don't work
-        expect(hasProjects).toBe(false);
+        expect(hasProjectAssets).toBe(false);
       }
     });
 

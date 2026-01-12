@@ -46,7 +46,7 @@ describe('Projects OData API', () => {
       const result = await db
         .from(Projects)
         .list()
-        .where(eq(Projects.status, 'Green'))
+        .where(eq(Projects.status, 'In Progress'))
         .top(50)
         .execute();
 
@@ -55,9 +55,9 @@ describe('Projects OData API', () => {
       
       if (result.data && result.data.length > 0) {
         for (const project of result.data) {
-          expect(project.status).toBe('Green');
+          expect(project.status).toBe('In Progress');
         }
-        console.log(`Found ${result.data.length} Green status projects`);
+        console.log(`Found ${result.data.length} In Progress status projects`);
       }
     });
 

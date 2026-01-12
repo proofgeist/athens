@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { eq } from '@proofkit/fmodata';
-import { db, IssuesSummary } from '../db';
+import { db, Issues } from '../db';
 
-describe('IssuesSummary OData API', () => {
+describe('Issues OData API', () => {
   describe('list', () => {
-    it('should list issues summaries with filter', async () => {
+    it('should list issues with filter', async () => {
       // Use a filter to avoid slow unfiltered queries
       const result = await db
-        .from(IssuesSummary)
+        .from(Issues)
         .list()
-        .where(eq(IssuesSummary.project_asset_id, '1'))
+        .where(eq(Issues.project_asset_id, '77B84AA1-44CE-4BEC-B601-F959F9D20687'))
         .top(10)
         .execute();
 
@@ -19,15 +19,15 @@ describe('IssuesSummary OData API', () => {
       } else {
         expect(result.data).toBeDefined();
         expect(Array.isArray(result.data)).toBe(true);
-        console.log(`Found ${result.data?.length || 0} issues summaries`);
+        console.log(`Found ${result.data?.length || 0} issues`);
       }
     });
 
     it('should filter by project_asset_id', async () => {
       const result = await db
-        .from(IssuesSummary)
+        .from(Issues)
         .list()
-        .where(eq(IssuesSummary.project_asset_id, '1'))
+        .where(eq(Issues.project_asset_id, '77B84AA1-44CE-4BEC-B601-F959F9D20687'))
         .top(50)
         .execute();
 
@@ -35,18 +35,18 @@ describe('IssuesSummary OData API', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        for (const summary of result.data) {
-          expect(summary.project_asset_id).toBe('1');
+        for (const issue of result.data) {
+          expect(issue.project_asset_id).toBe('77B84AA1-44CE-4BEC-B601-F959F9D20687');
         }
-        console.log(`Found ${result.data.length} summaries for project asset 1`);
+        console.log(`Found ${result.data.length} issues for project asset`);
       }
     });
 
-    it('should have priority counts', async () => {
+    it('should have priority and status fields', async () => {
       const result = await db
-        .from(IssuesSummary)
+        .from(Issues)
         .list()
-        .where(eq(IssuesSummary.project_asset_id, '1'))
+        .where(eq(Issues.project_asset_id, '77B84AA1-44CE-4BEC-B601-F959F9D20687'))
         .top(1)
         .execute();
 
@@ -54,34 +54,12 @@ describe('IssuesSummary OData API', () => {
       expect(result.data).toBeDefined();
       
       if (result.data && result.data.length > 0) {
-        const summary = result.data[0]!;
-        expect(summary.open_high).toBeDefined();
-        expect(summary.closed_high).toBeDefined();
-        expect(summary.open_medium).toBeDefined();
-        expect(summary.closed_medium).toBeDefined();
-        expect(summary.open_low).toBeDefined();
-        expect(summary.closed_low).toBeDefined();
-        console.log(`Summary: High(${summary.open_high}/${summary.closed_high}), Medium(${summary.open_medium}/${summary.closed_medium}), Low(${summary.open_low}/${summary.closed_low})`);
-      }
-    });
-
-    it('should have system progress data', async () => {
-      const result = await db
-        .from(IssuesSummary)
-        .list()
-        .where(eq(IssuesSummary.project_asset_id, '1'))
-        .top(10)
-        .execute();
-
-      expect(result.error).toBeUndefined();
-      expect(result.data).toBeDefined();
-      
-      if (result.data && result.data.length > 0) {
-        for (const summary of result.data) {
-          expect(summary.system_group).toBeDefined();
-          expect(summary.system_progress).toBeDefined();
-        }
-        console.log(`System groups found: ${[...new Set(result.data.map(s => s.system_group))].join(', ')}`);
+        const issue = result.data[0]!;
+        expect(issue.priority).toBeDefined();
+        expect(issue.status).toBeDefined();
+        expect(issue.short_description).toBeDefined();
+        expect(issue.system).toBeDefined();
+        console.log(`Issue: ${issue.issue_id} - Priority: ${issue.priority}, Status: ${issue.status}`);
       }
     });
   });
