@@ -1,24 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Ship, Calendar, Briefcase } from "lucide-react";
+import { ArrowLeft, Ship, Calendar, Briefcase, ChevronDown, CheckSquare, ListTodo } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircularProgress } from "@/components/charts/circular-progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CategoryProgressBar } from "@/components/charts/category-progress-bar";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
 import { GroupedBarChart } from "@/components/charts/grouped-bar-chart";
-import { SystemProgressList } from "@/components/charts/system-progress-list";
+import { SystemProgressMatrix, SystemProgressFilter } from "@/components/charts/system-progress-matrix";
+import { IssuesTable, type Issue } from "@/components/issues/issues-table";
+import { IssueDetailModal } from "@/components/issues/issue-detail-modal";
 import Loader from "@/components/loader";
 import { orpc } from "@/utils/orpc";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const projectAssetId = params?.id as string;
+  const [raptorOpen, setRaptorOpen] = useState(true);
+  const [actionItemsOpen, setActionItemsOpen] = useState(true);
+  const [hideHealthySystems, setHideHealthySystems] = useState(true);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [issueModalOpen, setIssueModalOpen] = useState(false);
 
   const { data: projectAsset, isLoading, error } = useQuery({
     ...orpc.projectAssets.getDetailById.queryOptions({ input: { id: projectAssetId } }),
+    enabled: !!projectAssetId,
+  });
+
+  const { data: issuesData } = useQuery({
+    ...orpc.issues.listByProjectAsset.queryOptions({
+      input: { projectAssetId },
+    }),
+    enabled: !!projectAssetId,
+  });
+
+  const { data: issuesSummary } = useQuery({
+    ...orpc.issues.getSummary.queryOptions({
+      input: { projectAssetId },
+    }),
     enabled: !!projectAssetId,
   });
 
@@ -54,36 +76,38 @@ export default function ProjectDetailPage() {
     { name: "Deferred", value: data.checklist_deferred ?? 0, color: "hsl(48, 96%, 53%)" },
   ];
 
-  // Prepare action item status by priority data
-  const actionItemsData = data.action_items_json;
-  const actionItemsByPriority = actionItemsData
+  // Prepare action item status by priority data from issues summary
+  const actionItemsByPriority = issuesSummary
     ? [
         {
           name: "High",
-          open: actionItemsData.actionItemStatus.highOpen,
-          closed: actionItemsData.actionItemStatus.highClosed,
+          new: issuesSummary.high_new,
+          assigned: issuesSummary.high_assigned,
+          resolved: issuesSummary.high_resolved,
+          closed: issuesSummary.high_closed,
         },
         {
           name: "Medium",
-          open: actionItemsData.actionItemStatus.mediumOpen,
-          closed: actionItemsData.actionItemStatus.mediumClosed,
+          new: issuesSummary.medium_new,
+          assigned: issuesSummary.medium_assigned,
+          resolved: issuesSummary.medium_resolved,
+          closed: issuesSummary.medium_closed,
         },
         {
           name: "Low",
-          open: actionItemsData.actionItemStatus.lowOpen,
-          closed: actionItemsData.actionItemStatus.lowClosed,
+          new: issuesSummary.low_new,
+          assigned: issuesSummary.low_assigned,
+          resolved: issuesSummary.low_resolved,
+          closed: issuesSummary.low_closed,
         },
       ]
     : [];
 
-  // Prepare action items by milestone data
-  const actionItemsByMilestone = actionItemsData
-    ? actionItemsData.actionItemsByMilestone.map((item: { milestone: string; open: number; closed: number }) => ({
-        name: item.milestone,
-        open: item.open,
-        closed: item.closed,
-      }))
-    : [];
+  const handleRowClick = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setIssueModalOpen(true);
+  };
+
 
   // Status dot color helper
   const getStatusDotColor = (status: string) => {
@@ -112,12 +136,12 @@ export default function ProjectDetailPage() {
         Back to Projects
       </Link>
 
-      {/* Hero Card with Overall Progress Ring */}
+      {/* Hero Card with Overall Progress Bar */}
       <Card className="relative overflow-hidden">
         <CardContent className="py-4 px-6">
-          <div className="flex items-center">
-            {/* Header Section with Absolute Ring */}
-            <div className="flex-1 space-y-3 pr-[140px]">
+          <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+            {/* Header Section */}
+            <div className="flex-1 space-y-3">
               <h1 className="text-3xl font-bold leading-tight">{data.projectName || "Project Details"}</h1>
               
               {/* Info Group - Horizontal Layout */}
@@ -163,124 +187,185 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            {/* Circular Progress - Vertically Centered */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-6">
-              <CircularProgress 
-                value={data.overall_completion ?? 0} 
-                label={`Overall\nReadiness`}
-                size="sm"
-                labelInside={true}
-              />
+            {/* Overall Progress Bar */}
+            <div className="flex-shrink-0 w-full md:w-96">
+              {(() => {
+                const overallValue = data.overall_completion ?? 0;
+                const percentageValue = overallValue <= 1 ? overallValue * 100 : overallValue;
+                const percentage = Math.round(percentageValue);
+                
+                // Color logic matching CategoryProgressBar
+                let colorClass = "bg-muted";
+                if (percentage >= 90) {
+                  colorClass = "bg-success";
+                } else if (percentage >= 70) {
+                  colorClass = "bg-info";
+                } else if (percentage >= 50) {
+                  colorClass = "bg-warning";
+                } else if (percentage > 0) {
+                  colorClass = "bg-highlight";
+                }
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Overall Progress
+                      </span>
+                      <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
+                        {percentage}%
+                      </span>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className={`h-full transition-all duration-500 ${colorClass}`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Progress Categories Cards - Horizontal Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
- 
-          <CardContent>
-            <CategoryProgressBar
-              label="RAPTOR Checklist"
-              value={data.checklist_percent ?? 0}
-              completed={(data.checklist_total ?? 0) - (data.checklist_remaining ?? 0)}
-              total={data.checklist_total ?? 0}
-              itemLabel="Items"
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <CategoryProgressBar
-              label="SIT Completion"
-              value={data.sit_percent ?? 0}
-              completed={(data.sit_total ?? 0) - (data.sit_remaining ?? 0)}
-              total={data.sit_total ?? 0}
-              itemLabel="Tests"
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <CategoryProgressBar
-              label="Doc Verification"
-              value={data.doc_percent ?? 0}
-              completed={(data.doc_total ?? 0) - (data.doc_remaining ?? 0)}
-              total={data.doc_total ?? 0}
-              itemLabel="Docs"
-            />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Raptor Section */}
+      <Collapsible open={raptorOpen} onOpenChange={setRaptorOpen} className="space-y-4">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md">
+          <div className="flex items-center gap-3">
+            <CheckSquare className="h-5 w-5 text-accent" />
+            <span className="font-semibold text-foreground">Raptor</span>
+          </div>
+          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pl-2">
+          {/* Top Row: Progress Bars Stack + Checklist Status Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+            {/* Left: Vertical Stack of Progress Bars */}
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="">
+                  <CategoryProgressBar
+                    label="RAPTOR Checklist"
+                    value={data.checklist_percent ?? 0}
+                    completed={(data.checklist_total ?? 0) - (data.checklist_remaining ?? 0)}
+                    total={data.checklist_total ?? 0}
+                    itemLabel="Items"
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="">
+                  <CategoryProgressBar
+                    label="SIT Completion"
+                    value={data.sit_percent ?? 0}
+                    completed={(data.sit_total ?? 0) - (data.sit_remaining ?? 0)}
+                    total={data.sit_total ?? 0}
+                    itemLabel="Tests"
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="">
+                  <CategoryProgressBar
+                    label="Doc Verification"
+                    value={data.doc_percent ?? 0}
+                    completed={(data.doc_total ?? 0) - (data.doc_remaining ?? 0)}
+                    total={data.doc_total ?? 0}
+                    itemLabel="Docs"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            {/* Right: Checklist Status Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Checklist Item Status by Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <HorizontalBarChart data={checklistStatusData} />
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Row 2: Three Status Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Checklist Item Status by Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HorizontalBarChart data={checklistStatusData} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Action Item Status by Priority</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GroupedBarChart
-              data={actionItemsByPriority}
-              bars={[
-                { key: "open", color: "hsl(25, 95%, 53%)", label: "Open" },
-                { key: "closed", color: "hsl(142, 76%, 36%)", label: "Closed" },
-              ]}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Action Item Completion Requirement by Milestone Target</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GroupedBarChart
-              data={actionItemsByMilestone}
-              bars={[
-                { key: "open", color: "hsl(25, 95%, 53%)", label: "Open" },
-                { key: "closed", color: "hsl(142, 76%, 36%)", label: "Closed" },
-              ]}
-            />
-          </CardContent>
-        </Card>
-      </div>
+          {/* System Progress Matrix */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-base">System Progress Overview</CardTitle>
+              <SystemProgressFilter 
+                checked={hideHealthySystems}
+                onCheckedChange={setHideHealthySystems}
+              />
+            </CardHeader>
+            <CardContent>
+              <SystemProgressMatrix 
+                data={data.system_progress_json}
+                hideHealthy={hideHealthySystems}
+                onHideHealthyChange={setHideHealthySystems}
+              />
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
-      {/* Row 3: Three System Progress Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardContent>
-            <SystemProgressList
-              title="Documentation Verification Progress Per System"
-              items={data.system_progress_json?.docVerification ?? []}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <SystemProgressList
-              title="Checklist Progress Per System"
-              items={data.system_progress_json?.checklist ?? []}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <SystemProgressList
-              title="SIT Progress Per System"
-              items={data.system_progress_json?.sit ?? []}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Action Items Section */}
+      <Collapsible open={actionItemsOpen} onOpenChange={setActionItemsOpen} className="space-y-4">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md">
+          <div className="flex items-center gap-3">
+            <ListTodo className="h-5 w-5 text-accent" />
+            <span className="font-semibold text-foreground">Action Items</span>
+          </div>
+          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pl-2">
+          {/* Action Items by Priority Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Action Item Status by Priority</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GroupedBarChart
+                data={actionItemsByPriority}
+                bars={[
+                  { key: "new", color: "hsl(221, 83%, 53%)", label: "New", stackId: "open" },
+                  { key: "assigned", color: "hsl(197, 71%, 73%)", label: "Assigned", stackId: "open" },
+                  { key: "resolved", color: "hsl(48, 96%, 53%)", label: "Resolved", stackId: "open" },
+                  { key: "closed", color: "hsl(142, 76%, 36%)", label: "Closed" },
+                ]}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Issues Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Issues</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {issuesData ? (
+                <IssuesTable 
+                  data={issuesData.data} 
+                  onRowClick={handleRowClick}
+                />
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  <p className="text-sm">Loading issues...</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Issue Detail Modal */}
+      <IssueDetailModal
+        issue={selectedIssue}
+        open={issueModalOpen}
+        onOpenChange={setIssueModalOpen}
+      />
     </div>
   );
 }
