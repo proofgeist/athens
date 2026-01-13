@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Clock, Hash, Tag, AlertCircle, Send, MessageSquare, User } from "lucide-react";
 import { orpc, client } from "@/utils/orpc";
 import type { Issue } from "./issues-table";
+import { authClient } from "@/lib/auth-client";
 
 type IssueDetailModalProps = {
   issue: Issue | null;
@@ -83,7 +84,7 @@ export function IssueDetailModal({
 }: IssueDetailModalProps) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
-
+  const { data: session } = authClient.useSession();
   // Fetch notes for this issue
   const { data: notesData, isLoading: isLoadingNotes } = useQuery({
     ...orpc.issueNotes.listByIssue.queryOptions({
@@ -95,12 +96,13 @@ export function IssueDetailModal({
   // Create note mutation
   const createNoteMutation = useMutation({
     mutationFn: async (note: string) => {
+      const user = session?.user;
       if (!issue?.id) throw new Error("No issue ID");
       
       return client.issueNotes.create({
         issueId: issue.id,
         note,
-        createdBy: "Current User", // TODO: Get from auth context
+        createdBy: user?.name || "Current User",
       });
     },
     onSuccess: () => {
@@ -145,13 +147,12 @@ export function IssueDetailModal({
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <div className="space-y-4">
-            {/* Issue ID */}
-            <div className="flex items-center gap-2">
-              <Hash className="h-5 w-5 text-muted-foreground" />
-              <DialogTitle className="font-mono text-xl font-bold">
-                {issue.issue_id || "Unknown Issue"}
+            {/* Short Description */}
+            {issue.short_description && (
+              <DialogTitle className="text-xl font-bold text-foreground">
+                {issue.short_description}
               </DialogTitle>
-            </div>
+            )}
 
             {/* Status and Priority Badges */}
             <div className="flex flex-wrap items-center gap-2">
@@ -159,19 +160,20 @@ export function IssueDetailModal({
               <PriorityBadge priority={issue.priority} />
             </div>
 
-            {/* Short Description */}
-            {issue.short_description && (
-              <p className="text-lg font-medium text-foreground">
-                {issue.short_description}
+            {/* Issue ID */}
+            <div className="flex items-center gap-2">
+              <Hash className="h-5 w-5 text-muted-foreground" />
+              <p className="font-mono text-lg font-medium text-muted-foreground">
+                {issue.issue_id || "Unknown Issue"}
               </p>
-            )}
+            </div>
           </div>
         </DialogHeader>
 
         {/* Two-column layout */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
           {/* Left Column - Issue Details */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <div className="flex-shrink-0 lg:flex-1 lg:overflow-y-auto px-6 py-4 space-y-6">
             {/* Description Section */}
             {issue.description && (
               <div className="space-y-2">
@@ -230,9 +232,9 @@ export function IssueDetailModal({
           </div>
 
           {/* Right Column - Notes */}
-          <div className="w-[500px] border-l border-border flex flex-col">
+          <div className="w-full lg:w-[500px] border-t lg:border-t-0 lg:border-l border-border flex flex-col flex-shrink-0 lg:flex-shrink lg:min-h-0">
             {/* Notes Header */}
-            <div className="px-4 py-3 border-b border-border bg-secondary/30">
+            <div className="px-4 py-3 border-b border-border bg-secondary/30 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -242,7 +244,7 @@ export function IssueDetailModal({
             </div>
 
             {/* Notes List - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 lg:min-h-0">
               {isLoadingNotes ? (
                 // Loading skeleton placeholders
                 <>
@@ -280,25 +282,43 @@ export function IssueDetailModal({
                       })
                     : "";
 
+                  const isCurrentUser = note.created_by === session?.user?.name;
+                  
                   return (
                     <div
                       key={note.id}
-                      className="rounded-lg border border-border bg-card p-3 space-y-2"
+                      className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs font-medium text-foreground">
-                            {note.created_by || "Unknown"}
+                      <div
+                        className={`rounded-lg border p-3 space-y-2 max-w-[90%] ${
+                          isCurrentUser
+                            ? "border-accent/30 bg-accent/10 ml-4"
+                            : "border-border bg-card"
+                        }`}
+                      >
+                        <div className={`flex items-center justify-between gap-2 ${
+                          isCurrentUser ? "flex-row-reverse" : ""
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <User className={`h-3 w-3 ${
+                              isCurrentUser ? "text-accent" : "text-muted-foreground"
+                            }`} />
+                            <span className={`text-xs font-medium ${
+                              isCurrentUser ? "text-accent" : "text-foreground"
+                            }`}>
+                              {note.created_by || "Unknown"}
+                            </span>
+                          </div>
+                          <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                            {noteDate}
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                          {noteDate}
-                        </span>
+                        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                          isCurrentUser ? "text-foreground" : ""
+                        }`}>
+                          {note.note}
+                        </p>
                       </div>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {note.note}
-                      </p>
                     </div>
                   );
                 })

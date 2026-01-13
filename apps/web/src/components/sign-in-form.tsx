@@ -28,7 +28,8 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export default function SignInForm({
 	onSwitchToSignUp,
 }: {
-	onSwitchToSignUp: () => void;
+	// TEMPORARY: Sign-up disabled - can be removed when re-enabling
+	onSwitchToSignUp?: () => void;
 }) {
 	const router = useRouter();
 	const { isPending } = authClient.useSession();
@@ -112,7 +113,8 @@ export default function SignInForm({
 					</Button>
 				</form>
 
-				<div className="mt-6 text-center">
+				{/* TEMPORARY: Sign-up disabled - uncomment to re-enable */}
+				{/* <div className="mt-6 text-center">
 					<span className="text-sm text-muted-foreground">
 						Don't have an account?{" "}
 					</span>
@@ -123,7 +125,7 @@ export default function SignInForm({
 					>
 						Sign Up
 					</Button>
-				</div>
+				</div> */}
 			</CardContent>
 		</Card>
 	);

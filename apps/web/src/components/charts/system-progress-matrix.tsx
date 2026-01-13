@@ -76,7 +76,7 @@ export function SystemProgressFilter({ checked, onCheckedChange }: SystemProgres
         htmlFor="hide-healthy"
         className="text-sm font-medium cursor-pointer select-none"
       >
-        Hide healthy systems (all ≥ 70%)
+        Hide healthy systems (all ≥ 90%)
       </label>
     </div>
   );
@@ -117,7 +117,6 @@ export function SystemProgressMatrix({
   
   // Use external state if provided, otherwise use internal
   const hideHealthy = externalHideHealthy ?? internalHideHealthy;
-  const setHideHealthy = onHideHealthyChange ?? setInternalHideHealthy;
 
   // Transform data into flat structure
   const tableData = useMemo(() => {
@@ -256,43 +255,6 @@ export function SystemProgressMatrix({
         },
       },
       {
-        accessorKey: "sit",
-        enableSorting: true,
-        header: ({ column }) => {
-          const sortDirection = column.getIsSorted();
-          return (
-            <button
-              className="flex items-center gap-2 font-semibold hover:text-accent transition-colors"
-              onClick={() => {
-                if (sortDirection === "desc") {
-                  column.clearSorting();
-                } else {
-                  column.toggleSorting(sortDirection === "asc");
-                }
-              }}
-            >
-              SIT
-              {sortDirection === "asc" ? (
-                <ArrowUp className="h-4 w-4" />
-              ) : sortDirection === "desc" ? (
-                <ArrowDown className="h-4 w-4" />
-              ) : (
-                <ArrowUpDown className="h-4 w-4 opacity-50" />
-              )}
-            </button>
-          );
-        },
-        cell: ({ row }) => <ProgressCell value={row.getValue("sit")} />,
-        sortingFn: (rowA, rowB, columnId) => {
-          const a = rowA.getValue(columnId) as number | null;
-          const b = rowB.getValue(columnId) as number | null;
-          if (a === null && b === null) return 0;
-          if (a === null) return 1;
-          if (b === null) return -1;
-          return a - b;
-        },
-      },
-      {
         accessorKey: "docVerification",
         enableSorting: true,
         header: ({ column }) => {
@@ -329,6 +291,43 @@ export function SystemProgressMatrix({
           return a - b;
         },
       },
+      {
+        accessorKey: "sit",
+        enableSorting: true,
+        header: ({ column }) => {
+          const sortDirection = column.getIsSorted();
+          return (
+            <button
+              className="flex items-center gap-2 font-semibold hover:text-accent transition-colors"
+              onClick={() => {
+                if (sortDirection === "desc") {
+                  column.clearSorting();
+                } else {
+                  column.toggleSorting(sortDirection === "asc");
+                }
+              }}
+            >
+              SIT
+              {sortDirection === "asc" ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : sortDirection === "desc" ? (
+                <ArrowDown className="h-4 w-4" />
+              ) : (
+                <ArrowUpDown className="h-4 w-4 opacity-50" />
+              )}
+            </button>
+          );
+        },
+        cell: ({ row }) => <ProgressCell value={row.getValue("sit")} />,
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.getValue(columnId) as number | null;
+          const b = rowB.getValue(columnId) as number | null;
+          if (a === null && b === null) return 0;
+          if (a === null) return 1;
+          if (b === null) return -1;
+          return a - b;
+        },
+      },
     ],
     []
   );
@@ -346,7 +345,7 @@ export function SystemProgressMatrix({
     },
     globalFilterFn: (row, columnId, filterValue) => {
       if (!filterValue || filterValue !== "hideHealthy") return true;
-      // Hide if all non-null values are >= 70
+      // Hide if all non-null values are >= 90
       const values = [
         row.original.checklist,
         row.original.sit,
@@ -354,7 +353,7 @@ export function SystemProgressMatrix({
       ].filter((v): v is number => v !== null);
       
       if (values.length === 0) return true;
-      return values.some((v) => v < 70);
+      return values.some((v) => v < 90);
     },
   });
 
@@ -406,7 +405,7 @@ export function SystemProgressMatrix({
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   <span className="text-muted-foreground">
                     {hideHealthy
-                      ? "All systems are healthy (≥ 70%)"
+                      ? "All systems are healthy (≥ 90%)"
                       : "No results."}
                   </span>
                 </TableCell>
