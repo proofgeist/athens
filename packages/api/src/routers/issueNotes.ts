@@ -62,7 +62,7 @@ export const issueNotesRouter = {
           // Sort descending: newest (larger timestamp) comes first
           const timeA = new Date(a.creation_timestamp).getTime();
           const timeB = new Date(b.creation_timestamp).getTime();
-          return timeB - timeA; // Descending order: newest first
+          return timeA - timeB; // Ascending order: oldest first
         });
 
       return {
