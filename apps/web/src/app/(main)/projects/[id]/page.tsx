@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CategoryProgressBar } from "@/components/charts/category-progress-bar";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
-import { GroupedBarChart } from "@/components/charts/grouped-bar-chart";
+import { HorizontalGroupedBarChart } from "@/components/charts/horizontal-grouped-bar-chart";
 import { SystemProgressMatrix, SystemProgressFilter } from "@/components/charts/system-progress-matrix";
 import { IssuesTable, type Issue } from "@/components/issues/issues-table";
 import { IssueDetailModal } from "@/components/issues/issue-detail-modal";
@@ -234,14 +234,14 @@ export default function ProjectDetailPage() {
 
       {/* Raptor Section */}
       <Collapsible open={raptorOpen} onOpenChange={setRaptorOpen} className="space-y-4">
-        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md cursor-pointer">
           <div className="flex items-center gap-3">
             <CheckSquare className="h-5 w-5 text-accent" />
-            <span className="font-semibold text-foreground">Raptor</span>
+            <span className="font-semibold text-foreground">RAPTOR</span>
           </div>
           <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pl-2">
+        <CollapsibleContent className="space-y-4 pl-2 sm:pl-4">
           {/* Top Row: Progress Bars Stack + Checklist Status Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
             {/* Left: Vertical Stack of Progress Bars */}
@@ -260,22 +260,22 @@ export default function ProjectDetailPage() {
               <Card>
                 <CardContent className="">
                   <CategoryProgressBar
-                    label="SIT Completion"
-                    value={data.sit_percent ?? 0}
-                    completed={(data.sit_total ?? 0) - (data.sit_remaining ?? 0)}
-                    total={data.sit_total ?? 0}
-                    itemLabel="Tests"
+                    label="Doc Verification"
+                    value={data.doc_percent ?? 0}
+                    completed={(data.doc_total ?? 0) - (data.doc_remaining ?? 0)}
+                    total={data.doc_total ?? 0}
+                    itemLabel="Docs"
                   />
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="">
                   <CategoryProgressBar
-                    label="Doc Verification"
-                    value={data.doc_percent ?? 0}
-                    completed={(data.doc_total ?? 0) - (data.doc_remaining ?? 0)}
-                    total={data.doc_total ?? 0}
-                    itemLabel="Docs"
+                    label="SIT Completion"
+                    value={data.sit_percent ?? 0}
+                    completed={(data.sit_total ?? 0) - (data.sit_remaining ?? 0)}
+                    total={data.sit_total ?? 0}
+                    itemLabel="Tests"
                   />
                 </CardContent>
               </Card>
@@ -313,21 +313,21 @@ export default function ProjectDetailPage() {
 
       {/* Action Items Section */}
       <Collapsible open={actionItemsOpen} onOpenChange={setActionItemsOpen} className="space-y-4">
-        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 hover:shadow-md cursor-pointer">
           <div className="flex items-center gap-3">
             <ListTodo className="h-5 w-5 text-accent" />
             <span className="font-semibold text-foreground">Action Items</span>
           </div>
           <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pl-2">
+        <CollapsibleContent className="space-y-4 pl-2 sm:pl-4">
           {/* Action Items by Priority Chart */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Action Item Status by Priority</CardTitle>
+              <CardTitle className="text-base">Status by Priority</CardTitle>
             </CardHeader>
-            <CardContent>
-              <GroupedBarChart
+            <CardContent className="gap-4 flex flex-col">
+              <HorizontalGroupedBarChart
                 data={actionItemsByPriority}
                 bars={[
                   { key: "new", color: "hsl(221, 83%, 53%)", label: "New", stackId: "open" },
@@ -336,15 +336,7 @@ export default function ProjectDetailPage() {
                   { key: "closed", color: "hsl(142, 76%, 36%)", label: "Closed" },
                 ]}
               />
-            </CardContent>
-          </Card>
 
-          {/* Issues Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Issues</CardTitle>
-            </CardHeader>
-            <CardContent>
               {issuesData ? (
                 <IssuesTable 
                   data={issuesData.data} 

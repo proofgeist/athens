@@ -317,38 +317,6 @@ export function ProjectsListClient() {
 				),
 			},
 			{
-				accessorKey: "sit_percent",
-				id: "sit",
-				header: ({ column }) => {
-					const isSorted = column.getIsSorted();
-					return (
-						<Button
-							variant="ghost"
-							onClick={() => {
-								if (isSorted === "desc") {
-									column.clearSorting();
-								} else {
-									column.toggleSorting(isSorted === "asc");
-								}
-							}}
-							className="-ml-4"
-						>
-							SIT
-							{isSorted === "asc" ? (
-								<ChevronUp className="ml-2 h-4 w-4" />
-							) : isSorted === "desc" ? (
-								<ChevronDown className="ml-2 h-4 w-2" />
-							) : (
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							)}
-						</Button>
-					);
-				},
-				cell: ({ row }) => (
-					<CompletionBadge value={row.original.sit_percent} />
-				),
-			},
-			{
 				accessorKey: "doc_percent",
 				id: "doc",
 				header: ({ column }) => {
@@ -378,6 +346,38 @@ export function ProjectsListClient() {
 				},
 				cell: ({ row }) => (
 					<CompletionBadge value={row.original.doc_percent} />
+				),
+			},
+			{
+				accessorKey: "sit_percent",
+				id: "sit",
+				header: ({ column }) => {
+					const isSorted = column.getIsSorted();
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								if (isSorted === "desc") {
+									column.clearSorting();
+								} else {
+									column.toggleSorting(isSorted === "asc");
+								}
+							}}
+							className="-ml-4"
+						>
+							SIT
+							{isSorted === "asc" ? (
+								<ChevronUp className="ml-2 h-4 w-4" />
+							) : isSorted === "desc" ? (
+								<ChevronDown className="ml-2 h-4 w-2" />
+							) : (
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<CompletionBadge value={row.original.sit_percent} />
 				),
 			},
 		],
@@ -804,17 +804,17 @@ export function ProjectsListClient() {
 													</span>
 												</div>
 												<div className="flex flex-col gap-1">
-													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
-													<CompletionBadge value={item.sit_percent} />
-													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-														{item.sit_remaining ?? 0} Tests Remaining
-													</span>
-												</div>
-												<div className="flex flex-col gap-1">
 													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Doc</span>
 													<CompletionBadge value={item.doc_percent} />
 													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
 														{item.doc_remaining ?? 0} Docs Remaining
+													</span>
+												</div>
+												<div className="flex flex-col gap-1">
+													<span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">SIT</span>
+													<CompletionBadge value={item.sit_percent} />
+													<span className="font-mono text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+														{item.sit_remaining ?? 0} Tests Remaining
 													</span>
 												</div>
 											</div>
