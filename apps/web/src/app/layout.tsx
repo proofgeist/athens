@@ -20,8 +20,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Athens",
+	title: "Athens Group Raptor Dashboard",
 	description: "RAPTOR Inspection Dashboard",
+	icons: {
+		icon: [
+			{ url: "/favicon/favicon.png", sizes: "any" },
+		],
+		apple: [
+			{ url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+		],
+	},
 };
 
 export default function RootLayout({
@@ -30,9 +38,9 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" suppressHydrationWarning className="overflow-x-hidden">
 			<body
-				className={`${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
+				className={`${dmSans.variable} ${jetbrainsMono.variable} antialiased overflow-x-hidden`}
 			>
 				<Providers>{children}</Providers>
 			</body>
