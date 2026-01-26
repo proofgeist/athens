@@ -336,7 +336,7 @@ export default function ProjectDetailPage() {
                   <h3 className="text-lg font-semibold text-foreground">Open High Priority Action Items</h3>
                   <IssuesTable 
                     data={issuesData.data.filter(
-                      (issue) => issue.status?.toUpperCase() !== "CLOSED" || issue.priority?.toUpperCase() === "H"
+                      (issue) => issue.status?.toUpperCase() !== "CLOSED" && issue.priority?.toUpperCase() === "H"
                     )} 
                     onRowClick={handleRowClick}
                   />
