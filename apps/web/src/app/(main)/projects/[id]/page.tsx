@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CategoryProgressBar } from "@/components/charts/category-progress-bar";
 import { HorizontalBarChart } from "@/components/charts/horizontal-bar-chart";
 import { HorizontalGroupedBarChart } from "@/components/charts/horizontal-grouped-bar-chart";
-import { SystemProgressMatrix, SystemProgressFilter } from "@/components/charts/system-progress-matrix";
+import { SystemProgressMatrix } from "@/components/charts/system-progress-matrix";
 import { IssuesTable, type Issue } from "@/components/issues/issues-table";
 import { IssueDetailModal } from "@/components/issues/issue-detail-modal";
 import Loader from "@/components/loader";
@@ -21,7 +21,6 @@ export default function ProjectDetailPage() {
   const projectAssetId = params?.id as string;
   const [raptorOpen, setRaptorOpen] = useState(true);
   const [actionItemsOpen, setActionItemsOpen] = useState(true);
-  const [hideHealthySystems, setHideHealthySystems] = useState(true);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [issueModalOpen, setIssueModalOpen] = useState(false);
 
@@ -295,16 +294,11 @@ export default function ProjectDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="text-base">System Progress Overview</CardTitle>
-              <SystemProgressFilter 
-                checked={hideHealthySystems}
-                onCheckedChange={setHideHealthySystems}
-              />
             </CardHeader>
             <CardContent>
               <SystemProgressMatrix 
                 data={data.system_progress_json}
-                hideHealthy={hideHealthySystems}
-                onHideHealthyChange={setHideHealthySystems}
+                hideHealthy={false}
               />
             </CardContent>
           </Card>
@@ -338,10 +332,15 @@ export default function ProjectDetailPage() {
               />
 
               {issuesData ? (
-                <IssuesTable 
-                  data={issuesData.data} 
-                  onRowClick={handleRowClick}
-                />
+                <>
+                  <h3 className="text-lg font-semibold text-foreground">Open High Priority Action Items</h3>
+                  <IssuesTable 
+                    data={issuesData.data.filter(
+                      (issue) => issue.status?.toUpperCase() !== "CLOSED" || issue.priority?.toUpperCase() === "H"
+                    )} 
+                    onRowClick={handleRowClick}
+                  />
+                </>
               ) : (
                 <div className="text-center text-muted-foreground py-8">
                   <p className="text-sm">Loading issues...</p>

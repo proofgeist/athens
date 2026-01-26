@@ -113,7 +113,7 @@ export function SystemProgressMatrix({
   onHideHealthyChange 
 }: SystemProgressMatrixProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [internalHideHealthy, setInternalHideHealthy] = useState(true);
+  const [internalHideHealthy, setInternalHideHealthy] = useState(false);
   
   // Use external state if provided, otherwise use internal
   const hideHealthy = externalHideHealthy ?? internalHideHealthy;

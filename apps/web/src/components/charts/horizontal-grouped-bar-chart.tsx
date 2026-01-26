@@ -99,7 +99,7 @@ export function HorizontalGroupedBarChart({ data, bars }: HorizontalGroupedBarCh
           layout="vertical"
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <XAxis type="number" />
+          <XAxis type="number" allowDecimals={false} />
           <YAxis
             dataKey="name"
             type="category"
