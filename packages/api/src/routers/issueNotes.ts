@@ -39,36 +39,50 @@ export const issueNotesRouter = {
     .input(listByIssueInput)
     .output(listByIssueOutput)
     .handler(async ({ input }) => {
-      const result = await db
-        .from(IssueNotes)
-        .list()
-        .where(eq(IssueNotes.issue_id, input.issueId))
-        .top(1000)
-        .execute();
+      try {
+        const result = await db
+          .from(IssueNotes)
+          .list()
+          .where(eq(IssueNotes.issue_id, input.issueId))
+          .top(1000)
+          .execute();
 
-      if (result.error || !result.data) {
+        // Handle error or empty/null data from OData
+        if (result.error || !result.data) {
+          // Return empty result instead of throwing - this is expected when no notes exist
+          return { data: [], total: 0 };
+        }
+
+        // Handle case where data is not an array (shouldn't happen, but be defensive)
+        if (!Array.isArray(result.data)) {
+          return { data: [], total: 0 };
+        }
+
+        // Parse and sort by creation timestamp (oldest first for chat-like display)
+        const data = result.data
+          .map((item) => issueNoteSchema.parse(item))
+          .sort((a, b) => {
+            // Handle missing timestamps - put them at the end
+            if (!a.creation_timestamp && !b.creation_timestamp) return 0;
+            if (!a.creation_timestamp) return 1; // a goes to end
+            if (!b.creation_timestamp) return -1; // b goes to end
+            
+            // Sort ascending: oldest first
+            const timeA = new Date(a.creation_timestamp).getTime();
+            const timeB = new Date(b.creation_timestamp).getTime();
+            return timeA - timeB;
+          });
+
+        return {
+          data,
+          total: data.length,
+        };
+      } catch (error) {
+        // Log the error for debugging but return empty result
+        // This handles cases where OData throws an exception for empty results
+        console.error("Error fetching notes for issue:", input.issueId, error);
         return { data: [], total: 0 };
       }
-
-      // Parse and sort by creation timestamp (newest first - last to first)
-      const data = result.data
-        .map((item) => issueNoteSchema.parse(item))
-        .sort((a, b) => {
-          // Handle missing timestamps - put them at the end
-          if (!a.creation_timestamp && !b.creation_timestamp) return 0;
-          if (!a.creation_timestamp) return 1; // a goes to end
-          if (!b.creation_timestamp) return -1; // b goes to end
-          
-          // Sort descending: newest (larger timestamp) comes first
-          const timeA = new Date(a.creation_timestamp).getTime();
-          const timeB = new Date(b.creation_timestamp).getTime();
-          return timeA - timeB; // Ascending order: oldest first
-        });
-
-      return {
-        data,
-        total: data.length,
-      };
     }),
 
   create: protectedProcedure

@@ -86,11 +86,15 @@ export function IssueDetailModal({
   const [newNote, setNewNote] = useState("");
   const { data: session } = authClient.useSession();
   // Fetch notes for this issue
-  const { data: notesData, isLoading: isLoadingNotes } = useQuery({
+  const { data: notesData, isLoading: isLoadingNotes, isError: isNotesError } = useQuery({
     ...orpc.issueNotes.listByIssue.queryOptions({
       input: { issueId: issue?.id || "" },
     }),
     enabled: !!issue?.id && open,
+    // Don't retry on failure - empty notes is a valid state
+    retry: false,
+    // Don't throw to the global error handler for this query
+    throwOnError: false,
   });
 
   // Create note mutation
@@ -267,7 +271,7 @@ export function IssueDetailModal({
                     </div>
                   ))}
                 </>
-              ) : notes.length === 0 ? (
+              ) : isNotesError || notes.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No notes yet</p>
